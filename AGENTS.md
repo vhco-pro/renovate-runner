@@ -15,6 +15,11 @@ Private target source is processed within the owner-controlled GitHub job.
 The pinned shared docs currently prefer the Mend-hosted App; this repository records the owner's selected alternative.
 Keep private source, provider credentials and runtime state outside this public repository and its published assets.
 
+The owner selected the `renovate-runner` repository identity for the central scheduler.
+Its released public component is the reusable workflow.
+The repository-local composite action is an internal helper in that workflow’s native-SHA checkout.
+Composite scripts use `github.action_path`, following the shared coding convention.
+
 ## Delivery
 
 Use the shared GitVersion workflow and tag action for versioning.
