@@ -1,6 +1,6 @@
 ---
 status: draft
-status_description: "Owner decisions and R-1 corrections applied; independent re-review and acceptance pending."
+status_description: "R-2 retained; scheduling clarification and tracking-issue approval pending before the next revision."
 issue: null
 goal: "VHCO repositories receive reviewable dependency updates through an owner-operated GitHub Actions runner."
 covers:
@@ -44,7 +44,7 @@ Detailed diagnosis uses an owner-local reproduction.
 V1 uses GitHub failure notifications and a documented owner check for a stale or inactive scheduler.
 Synthetic public fixtures establish behavior, while actual Lab configuration checks run locally.
 
-R-1's nine should-fix findings and one nit have been addressed in the draft, with independent re-review pending.
+Independent re-review returned scheduling, test-boundary and hardening corrections; the draft awaits the next combined revision.
 Acceptance authorizes implementation and isolated local tests.
 Connected tests require a separately approved App/test-resource setup, and pilot access, live recurring runs and release retain their concrete approval steps.
 
@@ -196,7 +196,17 @@ None yet; written once the document is planned.
 
 ## Open Questions
 
-None.
+### Q7: Should the twice-daily GitHub cron control cadence while manual runs remain available at any time?
+
+**Recommendation:** Force an always-open Renovate schedule and let the central GitHub cron control automatic execution. Remove the duplicated update windows and cron/window consistency check. The selected per-repository update limits still apply.
+
+| Option | You get | It costs |
+| --- | --- | --- |
+| **A. Cron cadence and anytime manual dispatch** | Delayed scheduled runs and approved retries can perform ordinary updates | Owner-requested runs may create updates outside the automatic cron times |
+| **B. Fixed Renovate update windows** | Ordinary updates are confined to additional time windows | Window width must be selected, and manual tests/retries wait for those windows |
+
+**Why this is yours:** R-2 F-01 identified a redundant restriction that changes manual retry behavior.
+
 
 ## Review Log
 
