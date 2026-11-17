@@ -1,6 +1,6 @@
 ---
 status: draft
-status_description: "Shared-standard release design retained; R-8 factual recovery and verification-scope corrections applied, independent re-review pending."
+status_description: "R-9 factual dispatch and generic-operation document corrections applied against the shared delivery standard; independent re-review pending."
 issue: https://github.com/vhco-pro/renovate-runner/issues/1
 goal: "A reusable owner-operated GitHub Actions runner produces reviewable dependency updates with verified access, privacy and recovery controls."
 covers:
@@ -10,6 +10,7 @@ covers:
   - tests/
   - examples/
   - renovate.json
+  - docs/operations.md
 ---
 
 # Plan: Shared Renovate runner
@@ -58,8 +59,9 @@ Acceptance authorizes implementation, isolated local tests and ordinary read-onl
 The fixture release dry-run and merged main release job each need a contents-write token, which can modify refs/releases and reaches their pinned actions.
 The fixture grant and implementation merge approval must explicitly cover those permissions.
 Publication waits for checks on that exact commit, and workflow-level concurrency serializes release runs.
-A main change during a release attempt fails the release job with an owner notification and the standard current-head dispatch recovery.
-This includes a documentation commit that skips push CI, so release work cannot disappear behind a successful skipped result.
+A main change detected before the publisher runs fails that attempt with an owner notification and current-head release-dispatch recovery.
+That recovery covers a newer skip-CI documentation commit arriving while an earlier release run is already active.
+Code-bearing deliveries follow the shared whole-delivery CI-marker rule, including their final metadata commit.
 Connected fixture tests require their own concrete App/test-resource approval.
 Lab owns subsequent real-repository access and recurring-run activation.
 First release approval remains separate from spec acceptance and implementation merge.
@@ -206,7 +208,9 @@ Exercise that procedure with inactive and stale fixtures before adoption.
 GitHub may delay/drop scheduled jobs and disables inactive public-repository schedules after 60 days.
 V1's inactive/stale detection depends on the owner running that procedure.
 Verify failure-notification settings and identify the scheduled-workflow notification recipient during connected setup.
-Keep the operator procedure with the runner so it remains available during local host outages. [Schedule behavior](https://docs.github.com/en/actions/reference/workflows-and-actions/events-that-trigger-workflows#schedule)
+Keep the generic health, delivery-readback and key-retirement ordering procedure in covered `docs/operations.md` so it remains available during local host outages.
+Its commands use placeholders and native Git/GitHub interfaces.
+`tests/operations.test.mjs` statically checks those documented commands, required identity comparisons and ordering; actual deployment values and executed evidence stay in Lab/VitePress. [Schedule behavior](https://docs.github.com/en/actions/reference/workflows-and-actions/events-that-trigger-workflows#schedule)
 
 ### Connected fixture setup
 
@@ -257,21 +261,26 @@ Shared workflow outputs are `version`, `tag`, `tagged` and `release-url`.
 Dry-run yields a nonempty calculated `version`, `tagged: 'false'`, empty `tag` and empty `release-url`, with unchanged remote refs/releases.
 The tag action's internal `pushed-tag` is not a shared-workflow output.
 
-The production release caller supports main pushes and an owner dispatch through the pinned shared workflow.
+The production release caller is `.github/workflows/release.yml`, supporting main pushes and owner `workflow_dispatch` through the pinned shared workflow.
+Its boolean `dry-run` input defaults to true, following the shared example.
+Effective dry-run is true whenever publication is disabled, or when an owner dispatch leaves `dry-run` true; enabled main pushes publish.
+The first approved publish and later recovery use `gh workflow run release.yml --ref main -f dry-run=false` after enablement, and wait for that exact run’s checks/publication.
+The separate Renovate `manual.yml` controls dependency runs.
 Its release job depends on successful required tests for that exact commit.
 Set workflow-level concurrency on the main/manual release caller using one repository-wide native group, `release-${{ github.repository }}`, with `queue: max` and `cancel-in-progress: false`, independent of the Renovate-run group.
 The group covers tests, source preflight and the shared release job.
 After tests and before invoking the shared publisher, read the current main head and compare it with the run’s exact source commit.
 If the main head changed, fail with an explicit source-moved result before tag/release mutation and notify the owner.
-Recover through the existing manual caller on the current head after its checks, including when the intervening commit was skip-CI documentation and started no new run.
+Recover through the release workflow’s current-main dispatch with `dry-run=false` after publication is enabled and checks pass, including when the intervening commit was skip-CI documentation and started no new run.
 Release runs remain serialized even if GitHub starts queued requests out of source order.
 A newer head makes an older attempt fail whether that newer head is unpublished, failed or documentation-only.
 This serializes ref/release writes while retaining queued requests within GitHub’s native capacity.
 A failed test prevents the release job.
 Use the pinned shared publisher’s native existing-tag behavior: the tag action skips an already-present remote tag, and the release action preserves an existing release or finishes an absent release for that tag.
 Its green result alone establishes no source-identity claim.
-The published-component installation/readback checklist is a written Lab operator procedure using native Git/GitHub commands.
-The component validates that documented checklist statically, and Lab executes the real tag/source comparison during delivery.
+The generic published-component readback checklist and post-merge ordering sequence live in covered `docs/operations.md`, using native Git/GitHub commands and placeholders.
+`tests/operations.test.mjs` checks its documented version/tag/source comparisons and fixture-retirement-before-production ordering.
+Lab supplies concrete deployment values and executes the real comparisons, with its maintained VitePress guide recording the deployment-specific procedure.
 Delivery verification compares the actual peeled tag commit and released caller source with the reviewed source, and a mismatch keeps issue 1 open and Lab inactive.
 Keep exact tags stable and recover through the shared standard’s current-head dispatch/reviewed repair path.
 An unset/false publication-enable variable forces dry-run and prevents tag/release publication on initial implementation merge.
@@ -284,6 +293,9 @@ The component feature covers reusable source, verified fixtures and release auto
 Run its final independent implementation review and complete gate on the claimed feature branch after pre-release proof, then integrate that complete source through its single reviewed PR.
 Because the original real-pilot AC-06 is transferred to Lab, that PR uses `Refs #1`.
 The source spec is complete at that integration, while first-release delivery remains separately reported and issue 1 remains open until delivery verification.
+Every code-bearing push and PR follows the pinned whole-delivery skip policy: code, tests or workflows anywhere in the outgoing range require normal CI, even when the final commit changes only metadata.
+Keep skip markers out of that delivery’s pushed/merge messages and verify the outgoing range and full PR diff before integration.
+A pure feature-document push remains separately eligible to skip CI.
 No component post-merge evidence commit or second implementation PR is required by this feature.
 
 After the separate first-release approval, read back the real tag, peeled source and release, and exercise an external caller at that released SHA under a fresh fixture grant if earlier credentials have been retired.
@@ -321,12 +333,12 @@ An operational stop disables scheduling and revokes the production key through t
 | Criterion | Proof |
 | --- | --- |
 | AC-01 | Locally run actionlint, native configuration validation, example-interface checks and the pinned full-image/container fixture. Confirm bundled tool inventory, non-root temporary-mount writes and manager availability. Static checks compare both real central callers with the reusable-job interface. Connected tests run the exact reviewed reusable workflow and external example from the manual-only public caller fixture after reading repository visibility and the standard runner label from job metadata. |
-| AC-02 | Locally reject wrong organizations, unlisted targets, invalid modes and unsupported callers before token creation. In approved connected fixtures, remove the non-main YAML guard and verify environment denial. Read back exact installation/permission scope and token inputs, probe granted/denied API operations and token revocation, then verify direct App main-push denial on the protected public caller fixture. Generate the native-required replacement key, discard its protected temporary PEM and record fingerprint/removal. Revoke the active key, observe rejected JWT authentication while its protected secret still exists, then delete the secret and remove fixture access with independent readbacks. Real-runner main denial belongs to Lab. Statically verify the documented post-merge sequence assigns release-readback, released-SHA consumption and final fixture-key retirement to Lab before real grants; Lab observes that ordering at delivery. Later fixtures require their own fixture-only App. Synthetic repository commands/scripts must never run. |
+| AC-02 | Locally reject wrong organizations, unlisted targets, invalid modes and unsupported callers before token creation. In approved connected fixtures, remove the non-main YAML guard and verify environment denial. Read back exact installation/permission scope and token inputs, probe granted/denied API operations and token revocation, then verify direct App main-push denial on the protected public caller fixture. Generate the native-required replacement key, discard its protected temporary PEM and record fingerprint/removal. Revoke the active key, observe rejected JWT authentication while its protected secret still exists, then delete the secret and remove fixture access with independent readbacks. Real-runner main denial belongs to Lab. Use tests/operations.test.mjs to statically verify the covered docs/operations.md post-merge sequence assigns release-readback, released-SHA consumption and final fixture-key retirement to Lab before real grants; Lab observes that ordering at delivery. Later fixtures require their own fixture-only App. Synthetic repository commands/scripts must never run. |
 | AC-03 | Locally execute the pinned action/container with invented private canaries in manifests, invalid configuration and simulated credential errors. After connected-test approval, repeat using owned private fixtures and inspect actual public logs, summaries and artifact inventory. Assert canaries/contents/credentials absent, target names allowed, preserved exit codes and debug rejection before token generation. |
 | AC-04 | Under connected-test approval, use the private GitHub fixtures for real branch updates of action/image pins, Bun plus bun.lock, Composer plus composer.lock, Go plus go.sum, an OpenTofu provider plus .terraform.lock.hcl and the synthetic custom manager. Validate resulting files with native checkers in the pinned full image. Local tests validate extraction/configuration only. Actual Lab custom-manager extraction remains a Lab rollout check with private local evidence. |
 | AC-05 | Connected GitHub fixtures prove two targets each receive their ordinary allowance, a third ordinary commit is held within the hourly period, and conflicting target schedules cannot block manual or delayed runs. Cover security/manual exceptions, three overlapping manual caller-fixture runs of the real reusable job with both queued requests retained, termination after branch creation and PR reuse on retry. Verify that one invalid target fails the aggregate job while another is processed, an uninstalled listed target fails token setup without target changes, and a forced timeout preserves earlier changes and permits a selected later-target retry. Verify owner notification and exercise disabled/stale and cancelled-run health checks. |
 | AC-06 | Owner-approved transfer to Lab issue 3. Lab verifies production scope, full dry-run, update PR or successful already-current processing, prior updater handover and private local checks. Preserve this criterion as an unmet transferred obligation rather than claiming fixture proof satisfies real adoption. |
-| AC-07 | Calculate the component version through the pinned tag action in contents-read dry-run. Under the explicit contents-write fixture grant, run the pinned shared workflow on the caller fixture’s own history with dry-run fixed true, checking nonempty version, tagged false, empty tag/release-url and unchanged refs/releases. Verify native source binding and rejected malformed identity. Local controlled main-head reads and a stub publisher test current-A eligibility and failure before publisher invocation when superseded by unpublished B, failed B, published B or skip-CI documentation D. Verify the documented failed-job notification/current-head dispatch route. Static workflow checks cover tests-first dependencies, workflow-level queue settings, initial dry-run and enabled-main wiring. Connected release dry-run proves the pinned interface; release-caller queue wiring is a static check. Statically check the written native delivery-readback procedure’s treatment of existing tags and source mismatch; actual tag/source comparison is executed and recorded by Lab after first-publication approval. Exercise disable/revert controls. |
+| AC-07 | Calculate the component version through the pinned tag action in contents-read dry-run. Under the explicit contents-write fixture grant, run the pinned shared workflow on the caller fixture’s own history with dry-run fixed true, checking nonempty version, tagged false, empty tag/release-url and unchanged refs/releases. Verify native source binding and rejected malformed identity. Local controlled main-head reads and a stub publisher test current-A eligibility and failure before publisher invocation when superseded by unpublished B, failed B, published B or skip-CI documentation D. Verify the failed-job notification and release.yml current-main dispatch with dry-run=false; assert disabled publication still forces dry-run. Check the native boolean default and enabled main/manual input mapping. Check whole-delivery CI-marker classification for a code-bearing range whose final commit is metadata, including merge/fast-forward messages. Static workflow checks cover tests-first dependencies, workflow-level queue settings, initial dry-run and enabled-main wiring. Connected release dry-run proves the pinned interface; release-caller queue wiring is a static check. Run tests/operations.test.mjs against covered docs/operations.md for generic health commands, release-readback identity comparisons, existing-tag treatment and post-release fixture retirement ordering; actual tag/source comparison is executed and recorded by Lab after first-publication approval. Exercise disable/revert controls. |
 
 ## Tasks
 
