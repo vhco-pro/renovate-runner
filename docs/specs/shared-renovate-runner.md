@@ -411,7 +411,8 @@ An operational stop disables scheduling and revokes the production key through t
 
 ## Tasks
 
-- [ ] T1 `tests/policy.test.mjs` - write executable preflight tests for caller identity, allowlist/organization, selected mode, debug rejection and forced limits; observe failure while the action preflight is absent (AC-01, AC-02, AC-03).
+- [x] T1 `tests/policy.test.mjs` - write executable preflight tests for caller identity, allowlist/organization, selected mode, debug rejection and forced limits; observe failure while the action preflight is absent (AC-01, AC-02, AC-03).
+  Evidence: `bun test tests/policy.test.mjs` on local Bun 1.4.3 exited 1 with the expected missing policy.mjs module, 0 pass and 1 fail. This is the initial failing baseline; matching the selected Bun 1.4.4 runtime remains pending.
 - [ ] T2 `.github/actions/renovate/scripts/`, `config/` - implement the tested preflight and generated native Renovate configuration without credentials in outputs; the T1 cases pass (AC-01, AC-02, AC-03).
 - [ ] T3 `tests/workflows.test.mjs`, `tests/privacy.test.mjs` - add structured workflow/interface tests and real command exit/output probes that fail before the action and callers exist (AC-01, AC-02, AC-03, AC-05).
 - [ ] T4 `.github/actions/renovate/action.yml`, `.github/workflows/`, `examples/`, `package.json` - compose verified pinned official actions, exact caller/implementation checkouts, private temporary storage and the tested command entry point; local interface/privacy checks and actionlint pass with scheduling inactive (AC-01, AC-02, AC-03, AC-05).
