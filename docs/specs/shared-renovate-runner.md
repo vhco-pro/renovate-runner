@@ -1,6 +1,6 @@
 ---
 status: draft
-status_description: "R-7 retained. Source-completion ownership and release-tag protection await owner answers before the next revision."
+status_description: "Owner confirmed source completion with Lab delivery verification and directed use of the shared release standard; R-7 corrections applied, independent re-review pending."
 issue: https://github.com/vhco-pro/renovate-runner/issues/1
 goal: "A reusable owner-operated GitHub Actions runner produces reviewable dependency updates with verified access, privacy and recovery controls."
 covers:
@@ -35,6 +35,8 @@ Consumers contain their dependency policies.
 GitVersion releases make the reusable workflow available to separately pinned callers.
 Publication starts only after the owner approves the first release and enables it.
 After that enablement, reviewed main merges publish automatically through the shared release workflow.
+The owner confirmed source-feature completion at its tested integration, with actual release readback and released-SHA consumption recorded in Lab before production access.
+A later connected fixture session uses a separate fixture-only App after the production App has real-repository access.
 
 The GitHub cron runs twice daily, and approved manual dispatches can run at any time.
 The policy keeps five open ordinary PRs per repository.
@@ -231,6 +233,10 @@ A later fixture session requires a fresh concrete grant and new test key.
 
 ### Component release and Lab rollout
 
+The owner directed this component to follow the existing shared release standard on November 17.
+Use its same-workflow `GITHUB_TOKEN` contents-write publisher, exact `v`-prefixed semantic tags, check-first execution and SHA-pinned external consumption.
+Updater access keeps its reviewed native App permission set.
+Deployment secret isolation and exact source/run verification remain explicit checks. [Standard release contract](https://github.com/vhco-pro/docs/blob/0c983f6793bfe35eb96ae95ad0c361c6200af44f/knowledge/shared-delivery.md)
 The source workflow repository is the release artifact.
 The central caller uses its local workflow from the same commit.
 External adopters pin a verified exact release commit and own their scheduler, credentials, billing and concurrency boundary.
@@ -256,9 +262,13 @@ Set workflow-level concurrency on the main/manual release caller using one repos
 The group covers tests, source preflight and the shared release job.
 After tests and before invoking the shared publisher, read the current main head and compare it with the run’s exact source commit.
 If it has been superseded, end with an explicit skipped-publication result and no tag/release mutation.
-Release runs remain serialized even if GitHub starts queued requests out of source order; a newer already-published main commit makes an older queued run ineligible.
+Release runs remain serialized even if GitHub starts queued requests out of source order; any newer main head makes an older queued run ineligible, including when the newer run has not published or has failed.
 This serializes ref/release writes while retaining queued requests within GitHub’s native capacity.
-A failed test or conflicting pre-existing tag holds publication without moving tags or automatically retrying.
+A failed test prevents the release job.
+Use the pinned shared publisher’s native existing-tag behavior: the tag action skips an already-present remote tag, and the release action preserves an existing release or finishes an absent release for that tag.
+Its green result alone establishes no source-identity claim.
+Delivery verification compares the actual peeled tag commit and released caller source with the reviewed source, and a mismatch keeps issue 1 open and Lab inactive.
+Keep exact tags stable and recover through the shared standard’s current-head dispatch/reviewed repair path.
 An unset/false publication-enable variable forces dry-run and prevents tag/release publication on initial implementation merge.
 The release job declares contents-write, including while dry-running, and that capability requires explicit implementation-merge approval.
 The first owner-approved release enables publication and authorizes the initial exact-source publish after merge and checks.
@@ -273,7 +283,10 @@ No component post-merge evidence commit or second implementation PR is required 
 
 After the separate first-release approval, read back the real tag, peeled source and release, and exercise an external caller at that released SHA under a fresh fixture grant if earlier credentials have been retired.
 The private Lab rollout task/evidence history and its maintained VitePress operating record retain those delivery readbacks, rendered caller fixture revision and actual run, distinguishing them from Lab production activation.
-Link the verified release and that rollout record in the component issue’s short delivery update, then close issue 1 after those release checks pass.
+Link the verified public release and the Lab tracker in the component issue’s short delivery update, then close issue 1 after release checks pass.
+If a delivery check fails, keep issue 1 open with the precise unmet check and the Lab dependency on hold.
+A source defect follows the normal issue/spec/review path as a linked repair to the completed component; its later reviewed release must pass delivery checks before adoption.
+Preserve failed evidence and existing tags, and keep the completed source feature’s historical result intact.
 The generic example template remains stable because the released-SHA example is rendered only in the fixture.
 A verified release for Lab access means that tag/source readback, released-SHA fixture consumption and all fixture-key retirement are complete.
 Lab’s real-repository installation grant and production key come after that whole sequence.
@@ -303,12 +316,12 @@ An operational stop disables scheduling and revokes the production key through t
 | Criterion | Proof |
 | --- | --- |
 | AC-01 | Locally run actionlint, native configuration validation, example-interface checks and the pinned full-image/container fixture. Confirm bundled tool inventory, non-root temporary-mount writes and manager availability. Static checks compare both real central callers with the reusable-job interface. Connected tests run the exact reviewed reusable workflow and external example from the manual-only public caller fixture after reading repository visibility and the standard runner label from job metadata. |
-| AC-02 | Locally reject wrong organizations, unlisted targets, invalid modes and unsupported callers before token creation. In approved connected fixtures, remove the non-main YAML guard and verify environment denial. Read back exact installation/permission scope and token inputs, probe granted/denied API operations and token revocation, then verify direct App main-push denial on the protected public caller fixture. Generate the native-required replacement key, discard its protected temporary PEM and record fingerprint/removal. Revoke the active key, observe rejected JWT authentication while its protected secret still exists, then delete the secret and remove fixture access with independent readbacks. Real-runner main denial belongs to Lab. Verify release-readback, released-SHA fixture consumption and final fixture-key retirement precede any real-repository grant; later fixtures require their own fixture-only App. Synthetic repository commands/scripts must never run. |
+| AC-02 | Locally reject wrong organizations, unlisted targets, invalid modes and unsupported callers before token creation. In approved connected fixtures, remove the non-main YAML guard and verify environment denial. Read back exact installation/permission scope and token inputs, probe granted/denied API operations and token revocation, then verify direct App main-push denial on the protected public caller fixture. Generate the native-required replacement key, discard its protected temporary PEM and record fingerprint/removal. Revoke the active key, observe rejected JWT authentication while its protected secret still exists, then delete the secret and remove fixture access with independent readbacks. Real-runner main denial belongs to Lab. Statically verify the documented post-merge sequence assigns release-readback, released-SHA consumption and final fixture-key retirement to Lab before real grants; Lab observes that ordering at delivery. Later fixtures require their own fixture-only App. Synthetic repository commands/scripts must never run. |
 | AC-03 | Locally execute the pinned action/container with invented private canaries in manifests, invalid configuration and simulated credential errors. After connected-test approval, repeat using owned private fixtures and inspect actual public logs, summaries and artifact inventory. Assert canaries/contents/credentials absent, target names allowed, preserved exit codes and debug rejection before token generation. |
 | AC-04 | Under connected-test approval, use the private GitHub fixtures for real branch updates of action/image pins, Bun plus bun.lock, Composer plus composer.lock, Go plus go.sum, an OpenTofu provider plus .terraform.lock.hcl and the synthetic custom manager. Validate resulting files with native checkers in the pinned full image. Local tests validate extraction/configuration only. Actual Lab custom-manager extraction remains a Lab rollout check with private local evidence. |
 | AC-05 | Connected GitHub fixtures prove two targets each receive their ordinary allowance, a third ordinary commit is held within the hourly period, and conflicting target schedules cannot block manual or delayed runs. Cover security/manual exceptions, three overlapping manual caller-fixture runs of the real reusable job with both queued requests retained, termination after branch creation and PR reuse on retry. Verify that one invalid target fails the aggregate job while another is processed, an uninstalled listed target fails token setup without target changes, and a forced timeout preserves earlier changes and permits a selected later-target retry. Verify owner notification and exercise disabled/stale and cancelled-run health checks. |
 | AC-06 | Owner-approved transfer to Lab issue 3. Lab verifies production scope, full dry-run, update PR or successful already-current processing, prior updater handover and private local checks. Preserve this criterion as an unmet transferred obligation rather than claiming fixture proof satisfies real adoption. |
-| AC-07 | Use the pinned tag action to calculate the component version in contents-read dry-run. Under the explicit contents-write fixture grant, run the pinned shared release workflow on the manual caller fixture’s own history with dry-run fixed true. Assert nonempty version, tagged false, empty tag/release-url and unchanged refs/releases. Verify implementation checkout equals native job.workflow_sha, caller-policy checkout equals github.sha and malformed/mismatched identity holds before tokens. Test the generic placeholder template, reviewed-SHA execution, initially disabled publication, exact-commit tests, workflow-level release serialization and automatic main publication after enablement. Include out-of-order queued A/B commits and show superseded A ends without tagging after B publishes. These fixture/source results support the component implementation review and complete gate on its claimed branch before the single PR. First actual release readback, released-SHA consumption and key retirement are post-merge delivery operations recorded in Lab before production grants, with component issue 1 open until release checks pass. Exercise disable/revert controls separately. |
+| AC-07 | Calculate the component version through the pinned tag action in contents-read dry-run. Under the explicit contents-write fixture grant, run the pinned shared workflow on the caller fixture’s own history with dry-run fixed true, checking nonempty version, tagged false, empty tag/release-url and unchanged refs/releases. Verify native source binding and rejected malformed identity. Local controlled main-head reads and a stub publisher test current-A eligibility, A superseded before unpublished/failed B, and A skipped after B publication; assert publisher invocation or absence. Static workflow checks verify tests-first dependencies, workflow-level queue settings, initial dry-run and enabled-main wiring. Connected dry-run callers verify the pinned shared interface and observed native serialization without publishing fixture tags. Test the inherited existing-tag success/output classification and source-readback mismatch hold with controlled API responses. Actual first publication remains separately approved, with identity, released-SHA consumption and key retirement observed in Lab before real grants. Exercise disable/revert controls. |
 
 ## Tasks
 
@@ -316,27 +329,7 @@ None yet; written once the document is planned.
 
 ## Open Questions
 
-### Q10: Should component source completion precede operational first-release verification?
-
-**Recommendation:** Complete the independently tested source feature through its single reviewed PR, with first-release identity, released-SHA consumption and fixture retirement recorded in the existing Lab rollout. A failed delivery check keeps component issue 1 open and Lab activation on hold, with a tracked repair following the normal review loop.
-
-| Option | You get | It costs |
-| --- | --- | --- |
-| Source completion, then Lab delivery evidence | One component PR and the selected separation of reusable capability from rollout | Source completion and verified release availability are reported separately |
-| Component stays in progress until delivery | Release evidence remains with component completion | The post-merge branch/evidence route needs an explicitly reviewed follow-up integration |
-
-**Why this is yours:** R-7 F-05 requests an explicit owner decision for the completion/delivery boundary. This question records that boundary before the next baseline revision.
-
-### Q11: Should production release tags exclude the updater App from writes?
-
-**Recommendation:** Lab configures native `v*` tag restrictions that deny the updater App creation, update and deletion, while retaining the approved publisher path. Read back and verify that path before production activation. The concrete setup review resolves the actual publisher identity and any required credential change.
-
-| Option | You get | It costs |
-| --- | --- | --- |
-| Protect release tags | Updater installation tokens cannot forge or replace release tags | Native rules and the actual publisher identity must be verified together |
-| Accept updater tag-write access | Existing token capabilities remain available | Delivery verification must identify unauthorized or mismatched release refs |
-
-**Why this is yours:** R-7 F-03 identifies a permission choice beyond the existing default-branch restriction. Selecting the design grants no live rule or credential change.
+None. The owner confirmed source-feature completion followed by Lab delivery verification and directed use of the existing shared release standard on November 17. The optional release-tag policy proposal was withdrawn after checking that standard.
 
 ## Review Log
 
@@ -725,3 +718,4 @@ PROPOSAL: Add one or two sentences to the Owner summary covering completion befo
 - [Native concurrency queue](https://docs.github.com/en/actions/how-tos/write-workflows/choose-when-workflows-run/control-workflow-concurrency) defines queued-run retention and its capacity.
 - [GitHub App private-key lifecycle](https://docs.github.com/en/apps/creating-github-apps/authenticating-with-a-github-app/managing-private-keys-for-github-apps) requires a replacement before deletion of the last key.
 - [Native job workflow identity](https://docs.github.com/en/actions/reference/workflows-and-actions/contexts#job-context) binds a reusable job checkout to its defining workflow repository and commit.
+- [Pinned native release implementation](https://github.com/vhco-pro/gh-release-action/blob/5bb1cd41296b2bb15ec62c57a674460cef547d1a/scripts/publish-release.sh) preserves an existing release and verifies tag presence before creation; exact source identity remains a delivery readback.
