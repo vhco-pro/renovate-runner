@@ -1,7 +1,7 @@
 ---
 status: draft
-status_description: "R-2 retained; scheduling clarification and tracking-issue approval pending before the next revision."
-issue: null
+status_description: "Owner scheduling choice and R-2 corrections applied; independent re-review and acceptance pending."
+issue: https://github.com/vhco-pro/renovate-runner/issues/1
 goal: "VHCO repositories receive reviewable dependency updates through an owner-operated GitHub Actions runner."
 covers:
   - .github/workflows/
@@ -26,12 +26,15 @@ Their names may appear in public configuration and run metadata.
 Their private source and credentials stay protected.
 
 The scheduler and manual entry point call the reusable workflow locally from this repository's trusted main branch.
-The official Renovate Action runs an immutable Renovate container, and a VHCO-owned App provides short-lived installation tokens.
-Its key belongs in a main-branch-restricted GitHub environment here.
+The official Renovate Action runs a digest-pinned full Renovate image with bundled tools, and a VHCO-owned App provides short-lived installation tokens.
+The full image has a larger download, while its bundled tool versions are fixed by the selected digest.
+The App key belongs in a main-branch-restricted GitHub environment here.
+Native main-update restrictions exclude the App from direct updates while preserving the trusted owner-admin route for authorized documentation, feature claims and reviewed merges.
 Pilot repositories contain their dependency policies.
 GitVersion releases make the reusable workflow available to future separately pinned callers.
 
-The selected policy runs twice daily and keeps five open ordinary PRs per repository.
+The GitHub cron runs twice daily, and approved manual dispatches can run at any time.
+The policy keeps five open ordinary PRs per repository.
 Native Renovate controls allow two ordinary update commits per repository per hourly period, including new branches and automatic rebases.
 The global commit budget is disabled, giving every target its own allowance.
 Automatic merging is disabled, and native security/manual-operation exceptions still apply.
@@ -44,8 +47,9 @@ Detailed diagnosis uses an owner-local reproduction.
 V1 uses GitHub failure notifications and a documented owner check for a stale or inactive scheduler.
 Synthetic public fixtures establish behavior, while actual Lab configuration checks run locally.
 
-Independent re-review returned scheduling, test-boundary and hardening corrections; the draft awaits the next combined revision.
-Acceptance authorizes implementation and isolated local tests.
+Document lint and review-record integrity checks pass.
+Runtime and hosted verification await implementation and the connected setup grant.
+Acceptance authorizes implementation, isolated local tests and read-only public standard-runner CI, including shared release dry-runs.
 Connected tests require a separately approved App/test-resource setup, and pilot access, live recurring runs and release retain their concrete approval steps.
 
 ### Background
@@ -76,18 +80,21 @@ This repository owns the pilot's scheduler, App key and native concurrency bound
 Pilot repositories supply Renovate policy files.
 Complete examples under `examples/` document central adoption and future external invocation, with their interfaces checked against the reusable workflow.
 
-Use the official Renovate Action at a verified commit and an exact Renovate image digest.
+Use the official Renovate Action at a verified commit and the official full Renovate image at an exact digest with `binarySource: global`.
+Record the bundled Node, Bun, Go, PHP and Composer versions when selecting the image and verify every supported manager against that inventory.
+Manager executables come from the pinned image.
+Native artifact checks must expose incompatible consumer tool constraints, keeping that target's adoption pending review of the image pin.
 Pin the App-token action and other external workflow components to verified commits.
 Use native configuration validation and set `exitCodeForErrors: true`, whose experimental upstream behavior is checked with the pinned runtime.
 Known repository error states produce a nonzero aggregate result while other targets are still processed.
 Native benign results such as a disabled or archived target retain their documented treatment.
-Adoption additionally requires an observed useful PR for each selected target. [Error policy](https://docs.renovatebot.com/self-hosted-configuration/#exitcodeforerrors)
+Adoption additionally requires target-specific evidence of actual processing, using an update PR or a successful full run and target-local dashboard showing that no ordinary updates are pending. [Error policy](https://docs.renovatebot.com/self-hosted-configuration/#exitcodeforerrors)
 
 The trusted organization configuration under `config/` owns the allowlist and selected rate/merge controls.
 The scheduler owns the twice-daily UTC cron, away from the start of the hour.
-The organization configuration supplies matching update windows and `updateNotScheduled: false`.
-A consistency check compares the cron and windows.
-Use native `force` overrides for those windows, `updateNotScheduled`, `commitHourlyLimit: 2`, `prConcurrentLimit: 5` and `automerge: false` so target policies cannot silently replace them.
+Use native `force` overrides for `schedule: []`, `commitHourlyLimit: 2`, `prConcurrentLimit: 5` and `automerge: false` so target schedules cannot make delayed runs or approved manual dispatches ineffective.
+The empty Renovate schedule permits updates whenever the central process is explicitly running.
+Automatic invocation frequency comes from the GitHub cron.
 Other consumer rules retain their normal ownership.
 Leave `prCommitsPerRunLimit: 0` in the self-hosted configuration.
 Security fixes and owner-requested operations retain upstream exceptions, so these controls establish an ordinary-update rate, with no promise of a hard total per run. [Native controls](https://docs.renovatebot.com/self-hosted-configuration/#force), [Per-repository limits](https://docs.renovatebot.com/configuration-options/#commithourlylimit)
@@ -95,10 +102,24 @@ Security fixes and owner-requested operations retain upstream exceptions, so the
 ### Authentication and execution
 
 Use a VHCO-owned App installed on selected repositories.
-The concrete setup approval discloses its code, PR, issue and workflow-write rights and exact repository selection.
+The setup approval names the exact repository selection and the following App permissions.
+
+| Permission scope | Level |
+| --- | --- |
+| Repository Administration, Dependabot alerts and Metadata | Read |
+| Repository Checks, Commit statuses, Contents, Issues, Pull requests and Workflows | Read/write |
+| Organization Members | Read |
+
+Merge-queue integration is deferred.
+Token generation explicitly requests the approved permission subset through the official action's `permission-*` inputs and retains implicit Metadata read access.
+Connected verification reads back installation permissions and checks the requested token permissions with positive/negative API probes on owned fixtures. [App requirements](https://docs.renovatebot.com/modules/platform/github/), [Token permissions](https://github.com/actions/create-github-app-token#permission-permission-name)
 Store its private key only as a GitHub environment secret in this public runner repository.
 Configure an explicit selected-branch rule allowing main and denying other branches/tags, independently of checks inside YAML.
 A non-main workflow with its in-file guard removed must still be unable to obtain that secret.
+Before adding a key, configure a native main-update ruleset permitting the trusted owner-admin route and excluding the App and other writers from bypass.
+This preserves the existing documentation/claim workflow and keeps code merges under owner review.
+Verify the effective rules and an installed App's rejected direct push using the key-holding public caller fixture.
+Repeat the direct-push denial on this runner after its pilot installation grant and before handing a token to Renovate. [Main update restrictions](https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/managing-rulesets/available-rules-for-rulesets#restrict-updates)
 
 Generate installation tokens through the pinned official App-token action with explicit organization/repository scope and normal completion-time revocation.
 Keep the key in that step's secret input, pass only required token/configuration values to Renovate, and give the ordinary `GITHUB_TOKEN` contents-read permission.
@@ -107,8 +128,13 @@ Reject unlisted targets, wrong organizations, invalid modes and unsupported call
 External reusable-workflow callers supply their own environment and App key and own their billing and concurrency boundary. [Environment restrictions](https://docs.github.com/en/actions/reference/workflows-and-actions/deployments-and-environments), [Reusable workflow boundaries](https://docs.github.com/en/actions/reference/workflows-and-actions/reusing-workflow-configurations)
 
 Use one multi-repository Renovate invocation for each central run and a timeout below the one-hour installation-token lifetime.
+Add an installation grant and verify its effective access before adding a target to the active allowlist.
+For normal retirement, remove the target from that allowlist before withdrawing access.
+A scoped-token failure fails the whole run before target processing and reaches the owner through workflow failure notification.
 GitHub concurrency serializes privileged runs for the organization within this central repository, retaining an active run when another is queued.
 The official action's `docker-volumes` overrides its host-wide `/tmp:/tmp` default with a job-owned temporary directory.
+Resolve the selected image's non-root runtime UID/GID and explicitly use that identity.
+Create its temporary mount with matching ownership and mode `0700`, then verify writes and native package-manager execution under that identity.
 Keep the Docker socket unmounted and private working data outside the checked-out public source tree.
 Disable repository-supplied post-upgrade commands, lifecycle scripts and unrestricted environment forwarding using supported native controls.
 The runner's own update configuration maintains its tool pins. [Official action](https://github.com/renovatebot/github-action), [Self-hosted controls](https://docs.renovatebot.com/self-hosted-configuration/)
@@ -117,7 +143,7 @@ The runner's own update configuration maintains its tool pins. [Official action]
 
 The public allowlist and run metadata may identify the selected VHCO repositories.
 Private configuration, source, canary values, credentials and raw diagnostics have no public cache, artifact, step summary or committed output.
-Public fixture repositories contain generic invented material.
+Public in-repository test data under `tests/` and the owned private fixture repositories contain generic invented material.
 Real Lab configuration and its check evidence remain in Lab's local verification context.
 
 Use the official action's executable command-file interface to send both Renovate output streams to `/dev/null` while preserving Renovate's exit status.
@@ -131,6 +157,10 @@ Detailed diagnosis needs a separately authorized owner-local reproduction. [Acti
 
 Use native Renovate branch and PR handling on retry.
 An interrupted run may leave a bot branch or PR for the next authorized invocation to reconcile.
+Targets use the committed allowlist order.
+A job timeout stops the aggregate run, leaves completed target changes intact and can leave later targets unprocessed.
+Persistent slowness requires owner diagnosis or a manual dispatch restricted to the other allowed targets before retrying the slow target.
+The selected native limits prevent budget starvation during normal processing, while a persistent timeout remains an explicit operator-recovery case.
 A nonzero native result remains a failed job, with GitHub workflow notifications configured for the owner.
 Retry occurs on a later scheduled run or an explicit owner dispatch.
 The owner health procedure reads workflow state and the latest scheduled run through native GitHub CLI/API commands, identifies disabled scheduling or a last successful run older than 72 hours, and documents re-enabling and an approved retry.
@@ -145,28 +175,39 @@ Keep the operator procedure with the runner so it remains available during local
 
 Local implementation acceptance covers synthetic tests without GitHub credentials.
 Connected platform proofs require a separate concrete setup approval naming the VHCO-owned App, its key custody/permissions, this runner's environment and two private synthetic repositories.
-Use the working names `vhco-renovate`, `vhco-pro/renovate-fixture-a` and `vhco-pro/renovate-fixture-b` until availability and final names are verified in that approval.
-Initially limit the App installation and tokens to those fixtures, containing only invented manifests and canaries.
+Use the working names `vhco-renovate`, private `vhco-pro/renovate-fixture-a` and `vhco-pro/renovate-fixture-b`, and public `vhco-pro/renovate-caller-fixture` until availability and final names are verified in that approval.
+The public caller fixture has its own main-restricted environment, protected main and a separately revocable key for the same App.
+Its standard-runner jobs exercise an external exact-SHA invocation with caller-owned secret custody, billing and concurrency.
+Initially limit the App installation and tokens to the named fixtures, containing only invented manifests and canaries.
+Token repository selection remains explicit for each proof, including the caller fixture only when testing its App main-update denial.
 The private fixtures contain manifest and configuration data only.
 This exercises multi-target behavior before extending the same App's selected access to the real pilot through a separate grant.
 
-The connected test stage covers secret-branch denial, token scope/revocation, actual public-log inspection, concurrent runs, interrupted PR reuse and failure notifications.
-That stage authorizes writes only to its owned fixtures; connected effects require that setup approval.
+Credential-free local tests cover static validation, controlled action/container behavior and API fixtures.
+Real manager lockfile/branch updates and per-repository commit counting run against the approved GitHub fixtures, because Renovate's local platform performs lookup without creating branches.
+The connected stage covers those updates and counts, secret-branch/main-update denial, token scope/revocation, actual public-log inspection, concurrent runs, interrupted PR reuse, missing installation access, timeout recovery and failure notifications.
+That stage authorizes writes only to its owned fixtures.
+Connected effects require that setup approval.
 After fixture verification, separately approve pilot access and the first full dry-run.
 Compare repository refs/issues/PRs before and after the dry-run.
 Live dependency PRs and recurring scheduling need their approved target/action boundary.
-Read back actual access and an observed useful PR in every pilot target before declaring ownership transferred from any prior updater.
+Read back actual access and target-specific processing evidence before declaring ownership transferred from any prior updater.
+An update PR must change an identified dependency and its required lock/artifact files and pass the target's applicable checks.
+For an already-current target, accept a successful full run plus its dashboard confirming processed configuration and no pending ordinary updates, after real update behavior passed in the fixtures.
+Enable that dashboard through the reviewed pilot configuration where needed, keeping private dashboards private.
 Private consumer checks run locally.
 
 Publish the reusable workflow through the shared `vhco-pro/gh-release-workflow` and GitVersion tag path.
 The source workflow repository is the release artifact.
 The central caller uses its local workflow from the same commit.
 Future external adopters pin a verified exact release commit and keep their own scheduler and credentials.
-Before release approval, exercise shared version/tag preparation in dry-run and the external-call example against the reviewed commit using synthetic fixtures.
+Before release approval, run the shared release workflow's version/tag preparation in hosted dry-run mode in this public repository under read-only CI authority.
+Exercise the external-call example from the approved public caller fixture against the reviewed commit, using the approved private synthetic targets.
 Exact semantic-version tags identify releases.
 A reviewed source revert restores prior central behavior.
 An external caller can restore its prior immutable pin.
-Disable the scheduler and revoke the App key for an operational stop, leaving existing dependency PRs under normal repository review. [Shared delivery](https://github.com/vhco-pro/docs/blob/0c983f6793bfe35eb96ae95ad0c361c6200af44f/knowledge/shared-delivery.md)
+Keep separate schedule and manual caller files so disabling scheduled invocation leaves an owner-controlled recovery entry point.
+Disable the scheduled workflow and revoke the App key for an operational stop, leaving existing dependency PRs under normal repository review. [Shared delivery](https://github.com/vhco-pro/docs/blob/0c983f6793bfe35eb96ae95ad0c361c6200af44f/knowledge/shared-delivery.md)
 
 ## Acceptance Criteria
 
@@ -174,21 +215,21 @@ Disable the scheduler and revoke the App key for an operational stop, leaving ex
 - [ ] AC-02: Native environment restrictions protect the App key, and scoped privileged execution reaches only approved targets with automatic merging disabled.
 - [ ] AC-03: Normal and failing private-target runs preserve the selected diagnostic boundary while public target names remain permitted.
 - [ ] AC-04: Real update fixtures produce complete valid dependency changes for supported managers, with synthetic public custom-manager coverage and real Lab verification kept local.
-- [ ] AC-05: Native per-repository limits, scheduling, failures, concurrency and retry preserve progress across targets, with working failure notifications and an executable owner health procedure.
-- [ ] AC-06: Approved pilot repositories receive verified updater ownership and useful dependency PRs with their remaining policies preserved.
+- [ ] AC-05: Normal multi-target execution obeys native per-repository limits, while token failure, timeout, concurrency and retry have observable outcomes and tested recovery, with working owner notifications and health checks.
+- [ ] AC-06: Every approved pilot has verified updater ownership and processing evidence through a valid dependency PR or an observed already-current result, with its remaining policies preserved.
 - [ ] AC-07: Shared GitVersion releases, local central invocation, pinned external adoption and disable/recovery procedures are verified.
 
 ## Test Plan
 
 | Criterion | Proof |
 | --- | --- |
-| AC-01 | Locally run actionlint, native Renovate validation, example-interface checks and the pinned action/container fixture. Connected tests run the central workflow and external-call example on public standard Linux runners after visibility/label readback. |
-| AC-02 | Locally reject wrong organizations, unlisted targets, invalid modes and unsupported callers before token creation. In approved connected fixtures, remove the YAML guard on a non-main branch and verify native environment denial, then verify selected App access and token revocation. Synthetic repository commands/scripts must never run. |
+| AC-01 | Locally run actionlint, native configuration validation, example-interface checks and the pinned full-image/container fixture. Confirm bundled tool inventory, non-root temporary-mount writes and manager availability. Connected tests run the central workflow and external example from the approved public caller fixture after visibility/label readback. |
+| AC-02 | Locally reject wrong organizations, unlisted targets, invalid modes and unsupported callers before token creation. In approved connected fixtures, remove the non-main YAML guard and verify environment denial. Read back exact installation/permission scope and token inputs, probe granted/denied API operations and token revocation, then verify direct App main-push denial on the protected public caller fixture and runner after its pilot grant. Synthetic repository commands/scripts must never run. |
 | AC-03 | Locally execute the pinned action/container with invented private canaries in manifests, invalid configuration and simulated credential errors. After connected-test approval, repeat using owned private fixtures and inspect actual public logs, summaries and artifact inventory. Assert canaries/contents/credentials absent, target names allowed, preserved exit codes and debug rejection before token generation. |
-| AC-04 | Execute real native updates for action/image pins, Bun plus bun.lock, Composer plus composer.lock, Go plus go.sum, an OpenTofu provider plus .terraform.lock.hcl and a synthetic custom package manager. Validate files and diffs with relevant native checkers. Run the actual Lab custom-manager/configuration checks locally in Lab with private evidence. |
-| AC-05 | Local fixtures prove two targets each receive their ordinary allowance, the third ordinary commit is held within an hourly period, and conflicting repository/package-rule schedules cannot replace the selected windows. Cover security/manual exceptions. Connected tests overlap two central runs, terminate after an owned fixture branch exists and retry to verify serialization/PR reuse. One target's invalid configuration must fail the aggregate job while another is processed; verify the owner notification. Exercise the health procedure with disabled scheduling and a stale successful-run fixture. |
-| AC-06 | After pilot-access approval, read installation scope and perform full dry-run with before/after refs/issues/PRs. After write approval, inspect a useful bot PR in each pilot, applicable local/public checks and duplicate-updater ownership. |
-| AC-07 | Locally execute shared GitVersion release dry-run. Under connected-test approval, invoke the exact-SHA external-call example using synthetic targets and verify caller-owned secret/billing/concurrency. Verify version/tag outputs, prior-source/pin rollback and scheduler disable/key-revocation procedure before release/live adoption approval. |
+| AC-04 | Under connected-test approval, use the private GitHub fixtures for real branch updates of action/image pins, Bun plus bun.lock, Composer plus composer.lock, Go plus go.sum, an OpenTofu provider plus .terraform.lock.hcl and the synthetic custom manager. Validate resulting files with native checkers in the pinned full image. Local tests validate extraction/configuration only. Run actual Lab custom-manager checks locally in Lab with private evidence. |
+| AC-05 | Connected GitHub fixtures prove two targets each receive their ordinary allowance, a third ordinary commit is held within the hourly period, and conflicting target schedules cannot block manual or delayed runs. Cover security/manual exceptions, two overlapping central runs, termination after branch creation and PR reuse on retry. Verify that one invalid target fails the aggregate job while another is processed, an uninstalled listed target fails token setup without target changes, and a forced timeout preserves earlier changes and permits a selected later-target retry. Verify owner notification and exercise disabled/stale health checks. |
+| AC-06 | After pilot-access approval, read installation scope and perform full dry-run with before/after refs/issues/PRs. After write approval, verify either a dependency PR with required artifacts and passing applicable checks or a successful already-current run with target-local dashboard evidence. Verify prior updater handover and keep private checks local. |
+| AC-07 | Run shared GitVersion release dry-run as hosted read-only CI in this public repository. Under connected-test approval, invoke the exact-SHA external example from the public caller fixture and verify its own protected environment, key, standard-runner billing context and independent concurrency. Verify version/tag outputs, prior-source/pin rollback and the separate scheduler-stop/manual-recovery/key-revocation procedure. |
 
 ## Tasks
 
@@ -196,17 +237,7 @@ None yet; written once the document is planned.
 
 ## Open Questions
 
-### Q7: Should the twice-daily GitHub cron control cadence while manual runs remain available at any time?
-
-**Recommendation:** Force an always-open Renovate schedule and let the central GitHub cron control automatic execution. Remove the duplicated update windows and cron/window consistency check. The selected per-repository update limits still apply.
-
-| Option | You get | It costs |
-| --- | --- | --- |
-| **A. Cron cadence and anytime manual dispatch** | Delayed scheduled runs and approved retries can perform ordinary updates | Owner-requested runs may create updates outside the automatic cron times |
-| **B. Fixed Renovate update windows** | Ordinary updates are confined to additional time windows | Window width must be selected, and manual tests/retries wait for those windows |
-
-**Why this is yours:** R-2 F-01 identified a redundant restriction that changes manual retry behavior.
-
+None.
 
 ## Review Log
 
@@ -386,3 +417,7 @@ PROPOSAL: File a tracking issue when the owner authorizes one and record its URL
 - [Environment restrictions](https://docs.github.com/en/actions/reference/workflows-and-actions/deployments-and-environments) defines selected-branch secret access.
 - [Reusable workflow boundaries](https://docs.github.com/en/actions/reference/workflows-and-actions/reusing-workflow-configurations) defines caller context, billing and permissions.
 - [Schedule behavior](https://docs.github.com/en/actions/reference/workflows-and-actions/events-that-trigger-workflows#schedule) defines delay, inactivity and notification-recipient behavior.
+- [Running Renovate](https://docs.renovatebot.com/getting-started/running/) and the [maintained image build](https://github.com/renovatebot/renovate/blob/main/tools/docker/Dockerfile) define the full variant and its bundled-tool mode.
+- [Token permission inputs](https://github.com/actions/create-github-app-token#permission-permission-name) define explicit installation-token narrowing.
+- [Native main restrictions](https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/managing-rulesets/available-rules-for-rulesets#restrict-updates) define update and bypass control.
+- [Local Renovate platform](https://docs.renovatebot.com/modules/platform/local/) defines lookup-only local behavior.
