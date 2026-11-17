@@ -296,6 +296,8 @@ None. The owner selected separate Lab rollout ownership and automatic main relea
 | 2026-11-17 | R-3 | spec | `903040755f7022539bd5f95b80e2233041f30bb0` | claude-opus-5-5 | procedural | Four factual should-fix findings and one nit; first-party assistant model attested, source/Git preserved; lint and freshness observed, later checks denied. |
 | 2026-11-17 | R-4 | spec | `f8b3a2b82522f3fc18823aa49177137b99a18d32` | claude-opus-5-5 | procedural | Five should-fix findings and one nit; first-party assistant model attested, source/Git preserved; lint/freshness observed and later checks denied. |
 
+| 2026-11-17 | R-5 | spec | `2ca47106f9d8064c7b68461554aa65ef787a5ec2` | claude-opus-5-5 | procedural | Four factual should-fix findings and one nit; first-party assistant attested, source/Git preserved; reviewer Bash denied. |
+
 ### R-1
 
 FINDING: F-01
@@ -534,6 +536,47 @@ SEVERITY: nit
 WHERE: Design, Authentication and execution (line 140); Design, Failures, retries and scheduler health (line 172)
 EVIDENCE: Line 140 says "Queue overflow remains a visible native cancellation that the owner health procedure can identify." Line 172 defines that procedure as reading workflow state and the latest scheduled run, and it detects only "disabled scheduling or a last successful run older than 72 hours". A cancelled queued manual run is neither of those. GitHub's concurrency page says "When the queue is full, any additional jobs or workflow runs are canceled."
 PROPOSAL: Add cancelled runs to the health procedure's reads, or drop the claim that the procedure identifies queue overflow.
+
+### R-5
+
+FINDING: F-01
+KIND: factual
+SEVERITY: should-fix
+WHERE: Design, Authentication and execution (lines 128 to 135); Design, Connected fixture setup (lines 201, 217 and 218); AC-02; Test Plan row AC-02
+EVIDENCE: Line 201 says the App "stays fixture-only throughout this stage", and line 134 has Lab generate "a new production key" only after retirement is recorded. So during each connected session the fixture key is the App's only private key. Line 130 says "revoke the fixture App key", line 133 says "Keep no extra private-key copy for that test", and line 135 says "Release delivery never requires keeping a test key alive between sessions". GitHub's "Managing private keys for GitHub Apps" page says "you must regenerate a new key before you can delete the existing key" and "If your GitHub App has only one key, you will need to generate a new key before deleting the old key." The retirement sequence in lines 130 to 132 and the AC-02 row ("Revoke its key, observe rejected JWT authentication while the protected secret still exists") therefore cannot run as written. Each session first has to generate a replacement key, and the document never names that step. That key stays live on the App after retirement, and its PEM is downloaded to whoever generated it. The document defines no custody, destruction or later use for it, which conflicts with line 133 and line 135. One implementer would throw the PEM away at once. Another would keep it for the next session or for Lab. This traces to the R-4 F-03 repair, which reordered retirement around the JWT probe. Limitations: Bash was denied by the session's permission mode, so `vh-adlc lint`, `fresh`, `gate`, `review check`, Git commands and `gh` reads were not run. HEAD was read from .git/refs/heads/main as 2ca47106f9d8064c7b68461554aa65ef787a5ec2. Public sources were read only through web fetch summaries and short quotes, not as verbatim whole files. Private Lab issue 3 was not observed. The stored R-1 to R-4 records were not byte-compared with their original returned text.
+PROPOSAL: Name the replacement-key step in the retirement sequence. Either destroy the replacement PEM unsaved and confirm it by a fingerprint readback, or name its custody. Correct line 133 and line 135 to match, and add the step to the AC-02 row.
+
+FINDING: F-02
+KIND: factual
+SEVERITY: should-fix
+WHERE: Context, Owner summary (lines 36, 37 and 55 to 59); Design, Component release and Lab rollout (lines 240 to 246); AC-07; Test Plan row AC-07
+EVIDENCE: Lines 240 to 244 define a production release caller that runs on main pushes and on owner dispatch, and that publishes automatically after enablement. They never say whether publication waits for tests or how release runs are serialized. The shared example at b18de6d2f305f971afe01ba31e17bde5966b1567, `examples/action-repo/release.yml`, has a `release` job with `needs: test` and `concurrency` `group: release-${{ github.event.pull_request.number || github.ref }}` with `cancel-in-progress: false`. shared-delivery.md says "Tests run first; copy its example folder". delivery.md says "Serialize publication where competing runs could conflict. Test before publication". This caller departs from the example: it has no pull_request trigger and adds a variable that forces dry-run. So a copy of the example is not what lines 240 to 242 describe. If two reviewed merges land close together, two runs compute versions on different commits, and either can tag first unless the runs are serialized. The AC-07 row ("automatic main release after enablement") does not cover either case. The Owner summary discloses contents-write only for the fixture dry-run (line 56). It omits that the merged release job holds contents-write on this public repository's main for every push, including disabled dry-runs (line 242). This traces to the owner's Q9 answer, applied in this revision. Verified at the pins: gh-release.yml maps `tag` to `steps.version.outputs.pushed-tag` and `tagged` to `steps.version.outputs.tagged`. tag.sh at 8cf5869816cf71437052ac97d086e00526bf2d89 calls `finish false "" "" dry-run`. In gh-release-action at 5bb1cd41296b2bb15ec62c57a674460cef547d1a, the publish step has `if: ${{ inputs.dry-run != 'true' }}`, and `release-url` is described as "empty on a dry run". This matches lines 236 to 238. Limitations: as in F-01.
+PROPOSAL: State that the release job runs only after the repository's checks pass, and give its concurrency group and queue behavior. Add both to the AC-07 row, and disclose the merged release job's contents-write permission in the Owner summary.
+
+FINDING: F-03
+KIND: factual
+SEVERITY: should-fix
+WHERE: Design, Central workflow and policy ownership (lines 102 to 105); Design, Authentication and execution (line 147); Design, Connected fixture setup (line 208); Design, Component release and Lab rollout (lines 224 to 228); AC-07; Test Plan rows AC-01 and AC-07
+EVIDENCE: Line 104 says "Check out workflow/configuration sources only at the explicit reviewed ref selected by the trusted caller". For the local central call, the caller and callee share one commit (line 223). For a remote caller (line 208, line 224), the reusable workflow's commit comes from the caller's `uses:` SHA. The checked-out scripts and configuration come from a ref the caller selects separately. The document never says whether these must be equal, how the workflow learns its own commit, or what happens when they differ. Renovate's digest updates in an adopter rewrite the `uses:` SHA and its tag comment, but they leave a separate ref input as it was. The adopter would then run the new workflow file against old scripts. The connected proof on line 208 invokes "the exact reviewed reusable-workflow commit" with matching values, so it passes whether or not a mismatch is rejected. The example checker on line 227 substitutes only the reviewed SHA. Limitations: as in F-01. Whether GitHub exposes the called workflow's own SHA in an expression context was not verified.
+PROPOSAL: Define how the remote call binds checked-out sources to the executing reusable-workflow commit: derive the ref from it, or reject a mismatched input before token creation. Add a mismatch case to the AC-07 row.
+
+FINDING: F-04
+KIND: factual
+SEVERITY: should-fix
+WHERE: Context, Owner summary (lines 36, 37 and 59); Design, Component release and Lab rollout (lines 228 and 247 to 249); AC-07; Test Plan row AC-07
+EVIDENCE: Lines 247 and 248 make the tag/release readback and a released-SHA external call "post-merge delivery checks" that "keep issue 1 open until observed". Line 228 adds a post-publication change to `examples/`, which is a covered path. AC-07 says "real publication tracked separately through delivery". AC-06 already has a residual, so the document can reach `complete` at merge. feature-documents.md says "`complete` is terminal for its scope; new scope is a new feature", and delivery.md says the feature "is delivered once every one of those paths has published". The document never says where the post-merge evidence and the example-pin update are recorded and reviewed, or which status the document holds meanwhile. A later edit to `examples/` would also land on a complete feature's covered path. Line 59 leaves first release approval unscheduled, so this gap can stay open indefinitely. One implementer would mark the document complete and comment on issue 1. Another would keep it in-progress until publication. R-4 F-04 asked where post-merge evidence is recorded, and this revision answers that only for the transferred AC-06. Limitations: as in F-01.
+PROPOSAL: Say which status the document holds between merge and first publication, where the readback, the released-SHA call and the example update are recorded, and whether that update runs as part of this feature or as separate tracked work.
+
+FINDING: F-05
+KIND: factual
+SEVERITY: nit
+WHERE: Design, Connected fixture setup (line 204); Design, Component release and Lab rollout (line 232)
+EVIDENCE: Line 204 lists what the caller fixture's main holds: "minimal manual-only integration and key-retirement workflows, synthetic trusted configuration and the checked external-call example". Line 232 also runs the pinned `gh-release-workflow` dry-run in that fixture, and the AC-07 row calls it the "manual caller fixture". The release dry-run caller is missing from the line 204 list.
+PROPOSAL: Add the manual-only release dry-run caller to the list on line 204.
+
+---
+
+Bash was blocked in this session, so I couldn't run `vh-adlc lint`, `fresh`, `gate` or `review check`, any Git commands, or `gh`. I read HEAD from `.git/refs/heads/main`. I read the pinned public sources only as web-fetch summaries and short quotes, not as whole files. I couldn't see private Lab issue 3. I didn't byte-compare the stored R-1 to R-4 records with their original text.
 
 ## Sources
 
