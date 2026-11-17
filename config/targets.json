@@ -1,0 +1,7 @@
+{
+  "organization": "vhco-pro",
+  "repositories": [
+    "vhco-pro/renovate-fixture-a",
+    "vhco-pro/renovate-fixture-b"
+  ]
+}
