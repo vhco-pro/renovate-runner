@@ -268,6 +268,7 @@ None.
 | 2026-11-17 | R-1 | spec | `2af283e8330ba2a73ab0a56bf780577829fc546d` | claude-opus-5-5 | procedural | Nine should-fix findings and one nit; first-party assistant model attested, read-only source/Git preserved; lint passed, some checks denied. |
 | 2026-11-17 | R-2 | spec | `c5462edfb07c80e2e1659c576d5d5dd964a63dc5` | claude-opus-5-5 | procedural | Eight should-fix findings and four nits; first-party assistant model attested, source/Git preserved; reviewer Bash denied, static review only. |
 | 2026-11-17 | R-3 | spec | `903040755f7022539bd5f95b80e2233041f30bb0` | claude-opus-5-5 | procedural | Four factual should-fix findings and one nit; first-party assistant model attested, source/Git preserved; lint and freshness observed, later checks denied. |
+| 2026-11-17 | R-4 | spec | `f8b3a2b82522f3fc18823aa49177137b99a18d32` | claude-opus-5-5 | procedural | Five should-fix findings and one nit; first-party assistant model attested, source/Git preserved; lint/freshness observed and later checks denied. |
 
 ### R-1
 
@@ -463,6 +464,50 @@ SEVERITY: nit
 WHERE: Test Plan row AC-01
 EVIDENCE: The AC-01 row ends "Connected tests run the central workflow and external example from the approved public caller fixture after visibility/label readback." Nothing in the document defines a label readback. It could mean the runner label, a repository label or something else.
 PROPOSAL: Name what is read back, for example repository visibility and the standard runner label in the job metadata.
+
+### R-4
+
+FINDING: F-01
+KIND: factual
+SEVERITY: should-fix
+WHERE: Context, Owner summary (lines 53 and 54); Design, Central workflow and policy ownership (lines 78 to 82 and 94); Design, Authentication and execution (lines 135 and 138 to 140); Design, Test setup, adoption and versioning (lines 183 to 191, 195 to 199 and 214 to 216); AC-01; AC-05; AC-07; Test Plan rows AC-01, AC-05 and AC-07
+EVIDENCE: The public caller fixture has three jobs in this draft. Line 187 says it runs "an external exact-SHA invocation". The AC-01 row says "Connected tests run the central workflow and external example from the approved public caller fixture". Line 214 says release preparation runs there "with its candidate source/history copied from the reviewed runner commit". The document never says what the fixture's main holds for each job, or which branch receives the copied history. Each choice has a cost. If the runner history lands on fixture main, it replaces the fixture's own caller workflow and brings in the runner's `schedule.yml`, `manual.yml` and read-only CI. That cron would then start in a public repository whose environment holds an App key (line 185). If the history lands on another branch, GitVersion computes a branch version, not the main version the AC-07 row claims to check with "Assert version calculation". delivery.md says "Run versioning from branch runs, where GitVersion sees the real branch". The allowlist is also undefined for fixture runs. Line 94 puts the allowlist in the trusted `config/`, and line 66 lists only the three pilot repositories, but the AC-05 multi-target, timeout and three-run proofs need `renovate-fixture-a` and `renovate-fixture-b` as targets. The document never says how those targets get listed without changing the committed pilot allowlist. It also never says whether the three-run queue proof exercises the runner's own `schedule.yml` and `manual.yml` group, which per GitHub's concurrency page must use one group name across both workflow files. A proof run only against a fixture copy could pass while the two real central callers use different groups. This traces to the R-3 F-01 repair, which moved the release dry-run into the caller fixture. Limitations: `vh-adlc lint` returned pass. `vh-adlc fresh` reported local and remote SHA f8b3a2b82522f3fc18823aa49177137b99a18d32, a clean feature tree and R-3 stale (baseline-changed). `vh-adlc gate planned` failed only on spec_review_fresh and accepted. The first `lint` and `fresh` calls without `--plugin-pin` returned usage errors and were rerun with the pin. `vh-adlc review check`, a `git diff 9030407 f8b3a2b` of the R-3 repair and an initial `cat` of the plugin files were denied by the session's permission mode, so stored-record integrity was not machine-checked and the repair diff was read only in the current text. Public sources were read through web fetch only.
+PROPOSAL: Define the caller fixture's layout: which branch or repository receives the copied runner history, how its copied schedule, manual and CI workflows stay inactive, and how fixture targets are listed apart from the committed pilot allowlist. Say whether the three-run proof covers the runner's real caller files or only checks statically that they share one group.
+
+FINDING: F-02
+KIND: factual
+SEVERITY: should-fix
+WHERE: Design, Test setup, adoption and versioning (lines 214 to 216); AC-07; Test Plan row AC-07
+EVIDENCE: The AC-07 row says "Assert version calculation, empty pushed-tag/release outputs and unchanged remote refs/releases." At b18de6d2f305f971afe01ba31e17bde5966b1567 (tag v0.1.1), `gh-release.yml` exposes only `version`, `tag`, `tagged` and `release-url`. It has no pushed-tag output. It pins `michielvha/gitversion-tag-action@8cf5869816cf71437052ac97d086e00526bf2d89`, whose `scripts/tag.sh` dry-run path calls `finish false "" "" dry-run`. That writes `tagged=false` and `skip-reason=dry-run`, not an empty value. shared-delivery.md says "Version outputs remain available when tagging is skipped", so `tag` is also expected to stay non-empty. One implementer would assert an empty `tag` or `tagged` and fail a correct dry-run. Another would read `pushed-tag` from the inner action, which the reusable workflow does not expose. What `release-url` holds in a dry-run was not observed in the fetched sources.
+PROPOSAL: Name the exact outputs and expected values, for example `tagged` equal to `false`, a non-empty computed `version` and `tag`, and an empty `release-url` once that is confirmed at the pinned revision.
+
+FINDING: F-03
+KIND: factual
+SEVERITY: should-fix
+WHERE: Context, Owner summary (lines 31 and 54); Design, Authentication and execution (lines 117 to 120); Design, Test setup, adoption and versioning (lines 185, 186 and 227); AC-02; Test Plan row AC-02
+EVIDENCE: Line 119 says "Revoke that fixture key, delete its secret and remove all fixture repositories from the App installation". Line 120 then says "verify that a JWT signed with the retired key is rejected". GitHub cannot read an environment secret back, so after the secret is deleted, signing a JWT with the retired key needs a copy of the private key held somewhere outside the protected environment. The document never names that custody, how long the copy lives or how it is destroyed. Line 117 and line 185 otherwise keep every App key under native environment protections. One implementer would keep a local key copy for the probe. Another would revoke the key first and run the fixture workflow while its secret still exists, so the negative proof needs no copy outside GitHub, and only then delete the secret. This traces to the R-3 F-03 repair, which added the retirement sequence.
+PROPOSAL: Order the retirement so the rejected-JWT probe runs from the fixture's protected job before its secret is deleted, or name where a retained key copy lives and how its destruction is confirmed.
+
+FINDING: F-04
+KIND: factual
+SEVERITY: should-fix
+WHERE: Design, Authentication and execution (lines 125 and 126); Design, Test setup, adoption and versioning (lines 201 and 219 to 227); AC-02; AC-06; AC-07; Test Plan rows AC-02, AC-06 and AC-07
+EVIDENCE: Line 201 says pilot access is approved only "After the released-reference delivery check and verified fixture-key retirement". Line 226 puts that check after "an approved real tag/release", and line 219 makes publication possible only "after merge and checks". So AC-06 and the AC-02 step "direct App main-push denial on ... runner after its pilot grant" (line 126) cannot run until after the implementation PR merges and a release is approved. AC-07 is split explicitly into pre-release proof and post-merge delivery. AC-02 and AC-06 are not. delivery.md says the document "returns to the default branch with the PR" and that a PR says `Closes #N` only when every criterion is met. The draft never says that the feature PR merges with AC-02 and AC-06 still open, which status the document holds then, or where their later evidence and implementation review are recorded. The fixture key also stays live from merge until an unscheduled release approval, and the draft sets no limit on that interval. This traces to the R-3 F-02 and F-03 repairs, which chained pilot access behind the release delivery check.
+PROPOSAL: State that the implementation PR merges with `Refs #1` and lists AC-02 and AC-06 as post-merge, and say how and where their evidence and the final implementation review are recorded. Alternatively, split the pilot-stage proofs into their own criterion or child feature. Say what happens to the fixture key if release approval is delayed.
+
+FINDING: F-05
+KIND: judgement
+SEVERITY: should-fix
+WHERE: Context, Owner summary (lines 34 and 54); Design, Test setup, adoption and versioning (lines 210 and 217 to 220); AC-07; Test Plan row AC-07
+EVIDENCE: Lines 217 to 220 make the production release caller permanently `workflow_dispatch` only. After an owner sets the enablement variable, each release still needs "an exact manual publish request", and "A push or implementation merge triggers no publication." The shared example at b18de6d (`examples/action-repo/release.yml`) publishes on push to `main`, with pull requests and dispatches as dry runs. delivery.md says chore patch bumps are policy "so dependency updates release the changed software". With dispatch-only publication, Renovate's own merged pin updates to this runner are never released unless the owner dispatches a run each time, so external callers fall behind. R-3 F-01 proposed dispatch-only "until release approval". The draft keeps it as the steady state and records no Open Question, while feature-documents.md says "Every trade-off the document settles is an open question". This traces to the R-3 F-01 repair.
+PROPOSAL: Add an Open Question on steady-state publication: (A) stay dispatch-only after enablement, or (B) after the first approved release, publish on push to main as in the shared example. Recommend removal of the extra manual step only if the owner accepts automatic releases.
+
+FINDING: F-06
+KIND: factual
+SEVERITY: nit
+WHERE: Design, Authentication and execution (line 140); Design, Failures, retries and scheduler health (line 172)
+EVIDENCE: Line 140 says "Queue overflow remains a visible native cancellation that the owner health procedure can identify." Line 172 defines that procedure as reading workflow state and the latest scheduled run, and it detects only "disabled scheduling or a last successful run older than 72 hours". A cancelled queued manual run is neither of those. GitHub's concurrency page says "When the queue is full, any additional jobs or workflow runs are canceled."
+PROPOSAL: Add cancelled runs to the health procedure's reads, or drop the claim that the procedure identifies queue overflow.
 
 ## Sources
 
