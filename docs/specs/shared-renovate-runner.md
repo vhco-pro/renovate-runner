@@ -361,6 +361,7 @@ None. The owner confirmed source-feature completion followed by Lab delivery ver
 | 2026-11-17 | R-7 | spec | `e143e89d5924e518102d5673dd9e570a478faaab` | claude-opus-5-5 | procedural | Five should-fix findings and one nit; first-party model attested, source/Git preserved; reviewer Bash denied. |
 | 2026-11-17 | R-8 | spec | `867f5a56fcfa47446154ded176a6b0650cff1f2c` | claude-opus-5-5 | procedural | Three factual should-fix findings; first-party assistant attested, source/Git preserved; lint/freshness observed, other checks denied. |
 | 2026-11-17 | R-9 | spec | `1066406d983d7cfb224d51f3eb1aa19e31eb5619` | claude-opus-5-5 | procedural | Three factual should-fix findings and one nit; first-party assistant attested, source/Git preserved; lint/freshness observed, other checks denied. |
+| 2026-11-17 | R-10 | spec | `bd1f78d2a3dfad7845389fac30c6e75f168f3f35` | claude-opus-5-5 | procedural | Two factual should-fix findings and one judgement should-fix; first-party assistant attested, source/Git preserved; reviewer Bash denied. |
 
 ### R-1
 
@@ -768,6 +769,48 @@ SEVERITY: nit
 WHERE: Context, Owner summary (line 61); Design, Component release and Lab rollout (lines 264 and 265)
 EVIDENCE: Line 61 says "A main change during a release attempt fails the release job". Lines 264 and 265 read the main head once, "After tests and before invoking the shared publisher". A main change after that read does not fail the attempt. The publisher then tags the run's own source commit, and the newer head gets its own run. The summary claims more than the Design does. Limitations: as in F-01.
 PROPOSAL: Say that a main change detected before the publisher runs fails the release job.
+
+### R-10
+
+FINDING: F-01
+KIND: factual
+SEVERITY: should-fix
+WHERE: Design, Component release and Lab rollout (lines 267, 273 to 274, 284, 288 and 293 to 297); Context, Owner summary (line 39); Design, Failures, retries and scheduler health (line 213); Test Plan rows AC-02 and AC-07; AC-07
+EVIDENCE: Line 284 says "Delivery verification compares the actual peeled tag commit and released caller source with the reviewed source, and a mismatch keeps issue 1 open and Lab inactive." Line 288 calls the first publish an "initial exact-source publish". The R-9 repair (line 267) makes that publish `gh workflow run release.yml --ref main -f dry-run=false`, so it tags whatever main's head is at dispatch time. Lines 273 and 274 also fail any run whose source is not the current head, so no run can tag an earlier commit. Line 293 puts the final implementation review before the complete-gate commit on the feature branch, and the single PR then lands by merge commit or fast-forward (delivery.md, Feature delivery). The tag therefore always peels to a commit that differs from the reviewed commit. It is the complete-gate commit, the merge commit, or a later document-only commit on main, which delivery.md places directly on the default branch. The document never says what "the reviewed source" is: the implementation-reviewed commit, the merged head, or the tree of the `covers` paths. A strict reading compares commit identities and always fails, which holds issue 1 open and Lab inactive on a correct release. A loose reading compares covered-path trees and passes. Line 282 has `tests/operations.test.mjs` check the documented "version/tag/source comparisons", and the AC-07 row has it check "release-readback identity comparisons", so either rule passes that static test. This traces to the R-9 F-01 repair, which made a current-main dispatch the first-publish route while line 288 kept "exact-source". Checks run: the pinned delivery.md and feature-documents.md were read from the docs cache. HEAD came from .git/HEAD (refs/heads/main) and .git/refs/heads/main as bd1f78d2a3dfad7845389fac30c6e75f168f3f35. Bash was denied by the session's permission mode, so `vh-adlc lint`, `fresh`, `gate`, `review check`, `git` commands and `gh` reads were not run, and no write probe was attempted. Glob shows that the only tracked files outside .git are README.md, AGENTS.md, CLAUDE.md, .github/copilot-instructions.md and this document. The ../evidence directory had no files. Line 56's claim "Document lint and review-record integrity checks pass" was not observed, and stored R-1 to R-9 records were not byte-compared with the original returned text. Private Lab issue 3 was not observed.
+PROPOSAL: Define the identity rule the readback applies. For example, the tag's peeled commit is the main head the release run used, it descends from the merged reviewed commit, and its diff from the reviewed commit touches no `covers` path. Replace "exact-source" and "the reviewed source" with that rule at every location listed, and add the rule to the static operations test.
+
+FINDING: F-02
+KIND: factual
+SEVERITY: should-fix
+WHERE: Test Plan row AC-07; Design, Component release and Lab rollout (lines 293 and 296 to 298); Context, Owner summary (line 64); AC-07
+EVIDENCE: The AC-07 row says "Check whole-delivery CI-marker classification for a code-bearing range whose final commit is metadata, including merge/fast-forward messages." The Design does not name any component that classifies anything. Lines 296 and 297 describe a delivery practice: keep skip markers out of the delivery's pushed and merge messages, and "verify the outgoing range and full PR diff before integration". Nothing under `scripts/` or `tests/` is assigned to classify a range or a message. The row also asks about merge and fast-forward messages, but line 293 runs the final independent implementation review and the complete gate before integration. At that point the merge message does not exist, and AC-07 must already be met (feature-documents.md: the complete gate requires `all_met` and `impl_review_clean`, and "A passing subset never upgrades a composite criterion"). One implementer would write a classifier script with fixture ranges and test it. Another would treat the row as the integrating session's manual check, which cannot be observed when AC-07 is judged. AC-07's own text ("versioning, ... invocation and disable/recovery procedures ... automatic release behavior") does not cover how this feature's PR is delivered. This traces to the R-9 F-02 repair, which added this row case. Checks run and limits: as in F-01.
+PROPOSAL: Either name a covered script that classifies a commit range and messages against the whole-delivery rule, with its fixtures and the result it reports, or remove the case from the AC-07 row. In the second case, keep lines 296 to 298 as a delivery obligation verified at integration and reported outside the criterion.
+
+FINDING: F-03
+KIND: judgement
+SEVERITY: should-fix
+WHERE: Design, Central workflow and policy ownership (lines 93, 98 and 112 to 115); Design, Private data and diagnostics (lines 187 and 188); Frontmatter (`covers`: `scripts/`); Test Plan rows AC-01 and AC-07
+EVIDENCE: The pinned conventions/coding.md (lines 25 to 27) says "A reusable workflow has no scripts of its own: steps that do the work belong in an action, which the workflow calls." The design has the reusable workflow `./.github/workflows/renovate.yml` check out its own repository at `job.workflow_repository` and `job.workflow_sha`, verify HEAD, and then execute "repository scripts" (lines 112 and 113). `covers` lists `scripts/` for that work. The design's approach does avoid the hazard coding.md names, the caller's `./scripts/`, and it binds the scripts to the exact workflow commit without a second hand-maintained ref. A composite action would need its own literal `uses` ref, and an expression cannot derive that ref from `job.workflow_sha`. Neither the document nor the repository AGENTS.md records this as an exception to the pinned convention. The shared AGENTS.md says "Report conflicts with central conventions; do not silently choose one". An implementer who follows coding.md would build a composite action and lose the native SHA binding. One who follows the document would ship scripts the convention forbids. This is a trade-off for the owner and has not been raised before in R-1 to R-9. Checks run: coding.md and the shared AGENTS.md were read from the docs cache at 0c983f6793bfe35eb96ae95ad0c361c6200af44f. Other limits as in F-01.
+PROPOSAL: Add an Open Question. (A) Keep the self-checkout with SHA-verified scripts, and record the exception and its reason in the repository AGENTS.md. (B) Move the work into a composite action pinned by a literal SHA, and say how that pin stays equal to the reusable workflow's commit.
+
+---
+
+I reviewed the spec at bd1f78d2 and returned three should-fix findings, two factual and one judgement. None is blocking, so a clean independent pass on the revised commit is still needed before acceptance.
+
+**R-9 repairs checked:**
+- **F-01:** fixed. `release.yml` has a `workflow_dispatch`, `dry-run` is a boolean that defaults to true, and `-f dry-run=false` is required for the first publish and for recovery. With publication disabled, runs are always dry runs. The Renovate `manual.yml` is named as a separate file. The AC-07 row now checks all of this. I confirmed against the shared example that its `dry-run` input is a boolean defaulting to true.
+- **F-02:** fixed. The claim now only covers release runs that have already started, and code-bearing deliveries follow the shared rule that keeps skip markers out of them. New problem: the AC-07 test for that rule has nothing to run (finding F-02 above).
+- **F-03:** fixed. `docs/operations.md` is now in `covers`, `tests/operations.test.mjs` is named, and real deployment values and evidence stay in Lab.
+- **F-04 (nit):** fixed.
+
+**New findings:**
+- **F-01:** the R-9 F-01 repair publishes whatever commit is at the head of main. That can never be the commit the implementation review saw. So the delivery check that compares the tag with "the reviewed source" either always fails or is undefined.
+- **F-02:** the AC-07 row asks to check skip-marker handling in merge and fast-forward messages. Nothing in the design does that check, and the merge message doesn't exist yet when AC-07 has to be met.
+- **F-03:** the design runs repository scripts from inside the reusable workflow. The pinned coding convention forbids that, and no exception is recorded. This is a choice for the owner.
+
+**What I couldn't run:** Bash was denied, so `vh-adlc` lint, fresh, gate and review check, `git` and `gh` were not run, and I made no write attempts. I read the target commit from the `.git` files, and the `../evidence` directory had no files. I didn't observe the Owner summary's claim that lint and review-record checks pass, or compare the stored records byte for byte. I read the GitHub concurrency page and the shared release example, both public. The concurrency page confirms `queue: max` (up to 100 pending runs) and the FIFO order with no ordering guarantee.
+
+I made no changes to the source or to anything on any provider.
 
 ## Sources
 
