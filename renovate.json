@@ -1,0 +1,21 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": ["config:recommended", "helpers:pinGitHubActionDigests"],
+  "automerge": false,
+  "ignorePaths": ["tests/fixtures/**"],
+  "packageRules": [
+    {
+      "matchManagers": ["github-actions"],
+      "matchUpdateTypes": ["minor", "patch", "digest", "pinDigest"],
+      "groupName": "compatible GitHub Actions updates"
+    }
+  ],
+  "customManagers": [
+    {
+      "customType": "regex",
+      "managerFilePatterns": ["/^\\.github/actions/renovate/action\\.yml$/", "/^scripts/check-workflows\\.mjs$/"],
+      "matchStrings": ["(?<depName>(?:ghcr\\.io/renovatebot/renovate|docker\\.io/rhysd/actionlint)):(?<currentValue>[0-9]+\\.[0-9]+\\.[0-9]+(?:-full)?)(?:@(?<currentDigest>sha256:[a-f0-9]{64}))?"],
+      "datasourceTemplate": "docker"
+    }
+  ]
+}

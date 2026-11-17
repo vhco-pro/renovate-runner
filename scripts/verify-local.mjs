@@ -48,8 +48,17 @@ export function verifyLocal() {
     mkdirSync(privateData, { mode: 0o700 });
     const fixture = resolve(privateData, 'fixture');
     cpSync(resolve(root, 'tests/fixtures/native/repository'), fixture, { recursive: true });
+    mkdirSync(resolve(fixture, '.github/actions/renovate'), { recursive: true });
+    mkdirSync(resolve(fixture, 'scripts'));
+    cpSync(resolve(root, '.github/actions/renovate/action.yml'), resolve(fixture, '.github/actions/renovate/action.yml'));
+    cpSync(resolve(root, 'scripts/check-workflows.mjs'), resolve(fixture, 'scripts/check-workflows.mjs'));
+    const fixtureConfig = JSON.parse(readFileSync(resolve(fixture, 'renovate.json'), 'utf8'));
+    const repositoryConfig = JSON.parse(readFileSync(resolve(root, 'renovate.json'), 'utf8'));
+    fixtureConfig.customManagers.push(...repositoryConfig.customManagers);
+    writeFileSync(resolve(fixture, 'renovate.json'), JSON.stringify(fixtureConfig));
     cpSync(resolve(root, 'tests/fixtures/native/inventory.mjs'), resolve(privateData, 'inventory.mjs'));
     cpSync(resolve(root, '.github/actions/renovate/scripts/renovate-command.sh'), resolve(privateData, 'renovate-command.sh'));
+    cpSync(resolve(root, 'renovate.json'), resolve(privateData, 'self-renovate.json'));
     const gitEnv = {
       PATH: process.env.PATH, HOME: directory, LANG: 'C.UTF-8',
       GIT_CONFIG_GLOBAL: '/dev/null', GIT_CONFIG_NOSYSTEM: '1', GIT_TERMINAL_PROMPT: '0',
@@ -108,6 +117,9 @@ export function verifyLocal() {
     report.validConfiguration = valid.code === 0 && valid.stdout.includes('Config validated successfully');
     report.invalidConfigurationRejected = invalid.code !== 0 && `${invalid.stdout}${invalid.stderr}`.includes('badOption');
     if (!report.validConfiguration) throw new Error(`Native configuration rejected\n${valid.stdout}\n${valid.stderr}`);
+    const selfConfiguration = container('renovate-config-validator', ['--strict', '--no-global', '/work/self-renovate.json']);
+    report.selfConfigurationValid = selfConfiguration.code === 0;
+    if (!report.selfConfigurationValid) throw new Error(`Repository update policy rejected\n${selfConfiguration.stdout}\n${selfConfiguration.stderr}`);
 
     const extraction = container('renovate', ['--platform=local', '--dry-run=extract'], {
       LOG_FORMAT: 'json', LOG_LEVEL: 'info', RENOVATE_BINARY_SOURCE: 'global', RENOVATE_EXIT_CODE_FOR_ERRORS: 'true',

@@ -1,8 +1,26 @@
 import { describe, expect, test } from 'bun:test';
-import { readFileSync } from 'node:fs';
+import { chmodSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { resolve } from 'node:path';
 
 const read = (path) => Bun.YAML.parse(readFileSync(new URL(`../${path}`, import.meta.url), 'utf8'));
 const pinned = /^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+(?:\/[A-Za-z0-9_./-]+)?@[a-f0-9]{40}$/;
+
+test('workflow checking refuses a mismatched installed actionlint before accepting its result', () => {
+  const directory = mkdtempSync(resolve(tmpdir(), 'vhco-actionlint-version-'));
+  try {
+    const command = resolve(directory, 'actionlint');
+    writeFileSync(command, '#!/bin/sh\nprintf "v0.0.0\\n"\n');
+    chmodSync(command, 0o700);
+    const result = Bun.spawnSync([process.execPath, 'scripts/check-workflows.mjs'], {
+      env: { PATH: `${directory}:/usr/bin:/bin`, HOME: directory }, stdout: 'pipe', stderr: 'pipe',
+    });
+    expect(result.exitCode).not.toBe(0);
+    expect(result.stderr.toString()).toContain('matching the pinned workflow-check image');
+  } finally {
+    rmSync(directory, { recursive: true });
+  }
+});
 
 describe('central callers', () => {
   test('scheduled and manual entries call the same reviewed reusable workflow', () => {

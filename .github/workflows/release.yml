@@ -46,7 +46,7 @@ jobs:
     needs: [checks, preflight]
     permissions:
       contents: write
-    uses: vhco-pro/gh-release-workflow/.github/workflows/gh-release.yml@b18de6d2f305f971afe01ba31e17bde5966b1567 # shared release
+    uses: vhco-pro/gh-release-workflow/.github/workflows/gh-release.yml@b18de6d2f305f971afe01ba31e17bde5966b1567 # v0.1.1
     with:
       runs-on: ubuntu-24.04
       dry-run: ${{ needs.preflight.outputs.dry-run != 'false' }}

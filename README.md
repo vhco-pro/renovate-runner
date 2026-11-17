@@ -2,5 +2,34 @@
 
 A reusable GitHub Actions workflow for owner-operated Renovate dependency updates.
 
-The [accepted design](docs/specs/shared-renovate-runner.md) is being implemented and verified.
-Scheduling and release publication remain disabled. Connected GitHub fixture tests and independent implementation review are still pending.
+One central public runner updates selected repositories through your GitHub App.
+Private source stays inside the job; raw Renovate diagnostics are discarded.
+Update PRs require your review, with automatic merging disabled.
+
+```mermaid
+flowchart LR
+    Schedule[Central schedule or manual run] --> Workflow[Shared Renovate workflow]
+    Policy[Reviewed target policy] --> Workflow
+    App[Selected GitHub App token] --> Workflow
+    Workflow --> Public[Public repositories]
+    Workflow --> Private[Private repositories]
+    Public --> Review[Dependency PR review]
+    Private --> Review
+```
+
+The [accepted feature](docs/specs/shared-renovate-runner.md) is in progress.
+Local tests include the pinned native image. Connected GitHub tests and independent implementation review remain pending.
+Scheduling and release publication are disabled.
+
+## Use and operate
+
+- [Complete external caller example](examples/external/renovate.yml), with [trusted target policy](examples/external/config/targets.json)
+- [Local verification](docs/operations.md#local-verification)
+- [App access and trust](docs/operations.md#adoption-and-trust)
+- [Scheduler health and recovery](docs/operations.md#scheduler-health)
+- [Release verification and credential retirement](docs/operations.md#release-identity)
+
+The component uses the shared GitVersion release workflow.
+External consumers pin a verified release commit. No release has been published yet.
+
+Licensed under [Apache-2.0](LICENSE). Copyright 2026 VH & Co BV.
