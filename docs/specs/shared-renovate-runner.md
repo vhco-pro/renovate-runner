@@ -245,6 +245,7 @@ None.
 | --- | --- | --- | --- | --- | --- | --- |
 | 2026-11-17 | R-1 | spec | `2af283e8330ba2a73ab0a56bf780577829fc546d` | claude-opus-5-5 | procedural | Nine should-fix findings and one nit; first-party assistant model attested, read-only source/Git preserved; lint passed, some checks denied. |
 | 2026-11-17 | R-2 | spec | `c5462edfb07c80e2e1659c576d5d5dd964a63dc5` | claude-opus-5-5 | procedural | Eight should-fix findings and four nits; first-party assistant model attested, source/Git preserved; reviewer Bash denied, static review only. |
+| 2026-11-17 | R-3 | spec | `903040755f7022539bd5f95b80e2233041f30bb0` | claude-opus-5-5 | procedural | Four factual should-fix findings and one nit; first-party assistant model attested, source/Git preserved; lint and freshness observed, later checks denied. |
 
 ### R-1
 
@@ -403,6 +404,43 @@ SEVERITY: nit
 WHERE: Frontmatter (`issue: null`)
 EVIDENCE: documentation.md says every feature document has a tracking issue and "`issue: null` marks work deliberately kept local". This feature plans hosted workflows, an App and pilot rollout across public and private repositories, so it is not local work.
 PROPOSAL: File a tracking issue when the owner authorizes one and record its URL, or say why the work stays local.
+
+### R-3
+
+FINDING: F-01
+KIND: factual
+SEVERITY: should-fix
+WHERE: Context, Owner summary (lines 52 and 53); Design, Test setup, adoption and versioning (lines 200 and 204); AC-07; Test Plan row AC-07
+EVIDENCE: Line 204 says "run the shared release workflow's version/tag preparation in hosted dry-run mode in this public repository under read-only CI authority", and line 52 says acceptance authorizes "read-only public standard-runner CI, including shared release dry-runs". Line 53 says release keeps its own approval step. In vhco-pro/gh-release-workflow, `.github/workflows/gh-release.yml` declares job-level `permissions: contents: write` and has no `if:` gate. Its `dry-run` input defaults to `false`, and the README says "The caller job grants `contents: write`". The adoption example `examples/action-repo/release.yml` triggers on push to `main`, pull requests and `workflow_dispatch`. Only pull requests and manual runs default to dry-run, so a push to main publishes. Two things follow. A hosted dry-run in this repository runs with a contents-write GITHUB_TOKEN, so it does not run under read-only authority. And an implementer who copies the example as line 200 directs would have the merge of the implementation PR tag and publish a release on main, with no separate release approval. The document does not say how the release workflow lands before release approval, for example dispatch-only or dry-run forced until approval. Limitations: `vh-adlc lint` returned pass. `vh-adlc fresh` reported local and remote SHA 903040755f7022539bd5f95b80e2233041f30bb0, a clean feature tree and R-2 stale (baseline-changed). `vh-adlc gate planned` failed on spec_review_fresh and accepted only. An earlier `git status --short` returned no output. Later `vh-adlc review check`, `git status --short --branch`, `gh issue view 1` and `gh repo view` were denied by the session's permission mode, so issue 1, repository visibility and stored-record integrity were not observed in this pass. gh-release-workflow was read at `main` through public web fetches, not at a pinned commit.
+PROPOSAL: State that the shared release dry-run job holds `contents: write` and which approval covers it. Define how the release workflow is added without publishing on the implementation merge, for example a dry-run-only or dispatch-only trigger until release approval, and say which later change enables publishing.
+
+FINDING: F-02
+KIND: factual
+SEVERITY: should-fix
+WHERE: Context, Owner summary (line 34); Design, Central workflow and policy ownership (line 81); Design, Test setup, adoption and versioning (lines 203 and 205); AC-07; Test Plan row AC-07
+EVIDENCE: AC-07 requires "Shared GitVersion releases, local central invocation, pinned external adoption ... are verified". The AC-07 row runs only a dry-run and checks "version/tag outputs", and it invokes the external example "exact-SHA" against "the reviewed commit" (line 205). Line 203 says adopters "pin a verified exact release commit". The pinned delivery.md says the feature "is delivered once every one of those paths has published, not when the merge's own CI passes", and "For reviewed but unreleased changes, identify the review ref honestly; never label a PR commit as a released version". So one implementer could tick AC-07 from the dry-run and a reviewed-commit call. Another would wait for a real tag and a call pinned to it. The document also never says what ref and tracking comment the committed `examples/` caller carries. An example in this repository cannot pin the release commit that contains it, so it needs either a placeholder like the shared workflow's `FULL_COMMIT_SHA` or a prior release SHA.
+PROPOSAL: Say whether AC-07 needs a published release tag and an external call pinned to it, under the separate release approval, or only the dry-run plus a reviewed-commit call. Name the ref and comment form the committed example uses.
+
+FINDING: F-03
+KIND: factual
+SEVERITY: should-fix
+WHERE: Context, Owner summary (lines 31 and 53); Design, Authentication and execution (lines 116 to 118 and 128); Design, Test setup, adoption and versioning (lines 177 to 184 and 191); AC-02; AC-07; Test Plan rows AC-02 and AC-07
+EVIDENCE: Line 179 gives the public caller fixture "a separately revocable key for the same App", and line 184 extends "the same App's selected access to the real pilot". Any private key of a GitHub App can create installation tokens for every installation and repository of that App. The `repositories` and `permission-*` inputs of create-github-app-token are chosen by the workflow that holds the key, so they do not limit the key. Line 182 ("Token repository selection remains explicit for each proof") is therefore a workflow choice, not a credential boundary. Once the pilot grant lands, the caller fixture's environment holds a credential with the same authority over private Lab as the runner's key. That credential sits in a second public repository whose main and writers also have to be trusted. The document never says whether the caller fixture key is revoked, or the caller fixture installation removed, before the pilot grant. Line 116 says the key is stored "only as a GitHub environment secret in this public runner repository", which no longer holds while the fixture key exists. This traces to the R-2 F-05 repair, which added the caller fixture key.
+PROPOSAL: Require revoking the caller fixture key and removing the fixture from the installation before the pilot grant, with a readback in AC-02, or use a separate test App for the caller fixture. Correct line 116 to match.
+
+FINDING: F-04
+KIND: factual
+SEVERITY: should-fix
+WHERE: Context, Owner summary (line 36); Design, Authentication and execution (line 134); Design, Failures, retries and scheduler health (lines 162, 165 and 166); AC-05; Test Plan row AC-05
+EVIDENCE: Line 134 says GitHub concurrency serializes privileged runs, "retaining an active run when another is queued". GitHub's concurrency page says that under the default `queue: single`, "any existing `pending` job or workflow run in the same group is canceled and replaced", and that `queue: max` allows "Up to 100 jobs or workflow runs" to be pending. With the default, an approved manual dispatch waiting behind an active run is cancelled by any later scheduled or manual run. That includes the subset retry on line 162 and the owner retry on lines 165 and 166, and it contradicts line 36's "approved manual dispatches can run at any time". A cancelled run is not a failure, so the failure notification on line 164 may not fire. The AC-05 row covers only "two overlapping central runs", which cannot observe the replacement of a pending run. Two implementers could pick the default or `queue: max` and get different retry behavior.
+PROPOSAL: Choose the native queue mode, recommending `queue: max` if queued dispatches must survive, or state that a pending run can be replaced. Add a three-run scenario to AC-05.
+
+FINDING: F-05
+KIND: factual
+SEVERITY: nit
+WHERE: Test Plan row AC-01
+EVIDENCE: The AC-01 row ends "Connected tests run the central workflow and external example from the approved public caller fixture after visibility/label readback." Nothing in the document defines a label readback. It could mean the runner label, a repository label or something else.
+PROPOSAL: Name what is read back, for example repository visibility and the standard runner label in the job metadata.
 
 ## Sources
 
