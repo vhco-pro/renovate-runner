@@ -1,6 +1,6 @@
 ---
 status: draft
-status_description: "R-6 factual corrections applied to stale-release handling, source completion and rollout ordering; independent re-review and acceptance pending."
+status_description: "R-7 retained. Source-completion ownership and release-tag protection await owner answers before the next revision."
 issue: https://github.com/vhco-pro/renovate-runner/issues/1
 goal: "A reusable owner-operated GitHub Actions runner produces reviewable dependency updates with verified access, privacy and recovery controls."
 covers:
@@ -316,7 +316,27 @@ None yet; written once the document is planned.
 
 ## Open Questions
 
-None. The owner selected separate Lab rollout ownership and automatic main releases after first-release approval on November 17.
+### Q10: Should component source completion precede operational first-release verification?
+
+**Recommendation:** Complete the independently tested source feature through its single reviewed PR, with first-release identity, released-SHA consumption and fixture retirement recorded in the existing Lab rollout. A failed delivery check keeps component issue 1 open and Lab activation on hold, with a tracked repair following the normal review loop.
+
+| Option | You get | It costs |
+| --- | --- | --- |
+| Source completion, then Lab delivery evidence | One component PR and the selected separation of reusable capability from rollout | Source completion and verified release availability are reported separately |
+| Component stays in progress until delivery | Release evidence remains with component completion | The post-merge branch/evidence route needs an explicitly reviewed follow-up integration |
+
+**Why this is yours:** R-7 F-05 requests an explicit owner decision for the completion/delivery boundary. This question records that boundary before the next baseline revision.
+
+### Q11: Should production release tags exclude the updater App from writes?
+
+**Recommendation:** Lab configures native `v*` tag restrictions that deny the updater App creation, update and deletion, while retaining the approved publisher path. Read back and verify that path before production activation. The concrete setup review resolves the actual publisher identity and any required credential change.
+
+| Option | You get | It costs |
+| --- | --- | --- |
+| Protect release tags | Updater installation tokens cannot forge or replace release tags | Native rules and the actual publisher identity must be verified together |
+| Accept updater tag-write access | Existing token capabilities remain available | Delivery verification must identify unauthorized or mismatched release refs |
+
+**Why this is yours:** R-7 F-03 identifies a permission choice beyond the existing default-branch restriction. Selecting the design grants no live rule or credential change.
 
 ## Review Log
 
@@ -328,6 +348,7 @@ None. The owner selected separate Lab rollout ownership and automatic main relea
 | 2026-11-17 | R-4 | spec | `f8b3a2b82522f3fc18823aa49177137b99a18d32` | claude-opus-5-5 | procedural | Five should-fix findings and one nit; first-party assistant model attested, source/Git preserved; lint/freshness observed and later checks denied. |
 | 2026-11-17 | R-5 | spec | `2ca47106f9d8064c7b68461554aa65ef787a5ec2` | claude-opus-5-5 | procedural | Four factual should-fix findings and one nit; first-party assistant attested, source/Git preserved; reviewer Bash denied. |
 | 2026-11-17 | R-6 | spec | `84869c3f8b89738ffef5198ba1d986c19a3323de` | claude-opus-5-5 | procedural | Three factual should-fix findings and one nit; first-party assistant attested, source/Git preserved; reviewer Bash denied. |
+| 2026-11-17 | R-7 | spec | `e143e89d5924e518102d5673dd9e570a478faaab` | claude-opus-5-5 | procedural | Five should-fix findings and one nit; first-party model attested, source/Git preserved; reviewer Bash denied. |
 
 ### R-1
 
@@ -638,6 +659,50 @@ SEVERITY: nit
 WHERE: Review Log (lines 312 to 319); Context, Owner summary (line 53)
 EVIDENCE: A blank line at line 318 separates the R-5 row on line 319 from the table that starts on line 312. In GitHub-flavoured Markdown a blank line ends a table, so the R-5 row renders as a plain paragraph outside the Review Log table, and a parser that reads only that table would miss it. Line 53 says "Document lint and review-record integrity checks pass". Limitations: as in F-01. Whether `vh-adlc` reads the separated row was not observed, so no change to the binary's reading is established.
 PROPOSAL: Remove the blank line so the R-5 row, and any later rows, stay in the Review Log table.
+
+### R-7
+
+FINDING: F-01
+KIND: factual
+SEVERITY: should-fix
+WHERE: Context, Owner summary (lines 36, 37 and 56 to 59); Design, Component release and Lab rollout (lines 245 to 248 and 253 to 265); AC-07; Test Plan row AC-07
+EVIDENCE: AC-07 says "automatic release behavior tested before the separately approved first publication". The AC-07 row asks for tests of "workflow-level release serialization and automatic main publication after enablement" and says to "Include out-of-order queued A/B commits and show superseded A ends without tagging after B publishes". The document defines only three release environments before first publication. The local check is a contents-read dry-run (row AC-07, line 244). The caller fixture runs the shared workflow "with fixed `dry-run: true`" and makes no "component release/version" claim (lines 245 and 246). This repository's release caller keeps publication forced to dry-run until the first owner-approved release (lines 262 and 264). None of these can show "B publishes" or a publication after enablement. GitHub's concurrency page says pending runs are processed "in first-in-first-out (FIFO) order" and that "ordering is not guaranteed", so a local harness cannot reproduce out-of-order queue starts either. Two implementers would therefore differ. One would stub the publisher and the main-head read in a local test, and that test passes even if the real workflow-level `concurrency` block is wrong. The other would try to tag a hosted repository, which no approval covers. The row also covers only the case where B published first. Line 259 states eligibility as "a newer already-published main commit makes an older queued run ineligible", but line 257 skips on any newer main head, including one whose own run has not published or has failed. The FIFO case, where A starts while B is still unpublished, is never exercised. This traces to the R-6 F-01 repair. Limitations: Bash was denied by the session's permission mode, so `vh-adlc lint`, `fresh`, `gate`, `review check`, Git commands and `gh` reads were not run, and no write probe was attempted. HEAD was read from .git/refs/heads/main as e143e89d5924e518102d5673dd9e570a478faaab, and .git/HEAD names refs/heads/main. The tracked files outside .git are README.md, AGENTS.md, CLAUDE.md, .github/copilot-instructions.md and this document. Public pages were read through web fetch summaries and short quotes. Private Lab issue 3 was not observed. The stored R-1 to R-6 records were not byte-compared with the original returned text, so the line 53 claim "Document lint and review-record integrity checks pass" was not confirmed.
+PROPOSAL: Name the environment and approval under which each AC-07 release-behavior case runs. Either add a fixture repository and grant that allow real tagging there, or state that these cases are local tests with a stubbed publisher and main-head reader, and that the native queue behavior is checked statically. Add the FIFO case where A starts before B has published, and align line 259 with the main-head rule on line 257.
+
+FINDING: F-02
+KIND: factual
+SEVERITY: should-fix
+WHERE: Test Plan row AC-02; Design, Authentication and execution (line 145); Design, Component release and Lab rollout (lines 268 to 279); AC-02; Test Plan row AC-07
+EVIDENCE: The AC-02 row ends with "Verify release-readback, released-SHA fixture consumption and final fixture-key retirement precede any real-repository grant". Lines 274 to 279 place the tag/source readback, the released-SHA fixture run and its key retirement after the separate first-release approval, which comes after the PR merges. Line 269 runs "its final independent implementation review and complete gate on the claimed feature branch after pre-release proof", and line 271 says "The source spec is complete at that integration". The complete gate requires `all_met` and `impl_review_clean`, and the standard says "A passing subset never upgrades a composite criterion". At the review the document requires, AC-02's own row cannot be fully executed. The AC-07 row handles the same events correctly: "First actual release readback, released-SHA consumption and key retirement are post-merge delivery operations recorded in Lab before production grants". One implementer would hold AC-02 open, so the feature branch cannot pass the complete gate before the single PR. Another would tick AC-02 without that step. This traces to the R-6 F-03 repair, which added the ordering check to the AC-02 row. Limitations: as in F-01.
+PROPOSAL: Move the ordering step out of the AC-02 row and into the post-merge delivery operations the AC-07 row already assigns to the Lab record. Alternatively, limit the AC-02 row to the pre-release part, a documented ordering procedure checked statically.
+
+FINDING: F-03
+KIND: judgement
+SEVERITY: should-fix
+WHERE: Context, Owner summary (lines 25, 33 and 36 to 37); Design, Authentication and execution (lines 126 to 130 and 148 to 153); Design, Component release and Lab rollout (lines 234 to 236, 253 to 265 and 274 to 278); AC-02; AC-07; Test Plan rows AC-02 and AC-07
+EVIDENCE: The release identity is a tag on this repository. Line 234 says "The source workflow repository is the release artifact", line 236 says external adopters "pin a verified exact release commit", and line 274 reads back "the real tag, peeled source and release". Line 25 makes this repository a Lab adoption target. The permission table (line 129) gives the App Contents and Workflows read/write, so its installation token, which is handed to the Renovate container, can write refs here. The only ref protection the document requires is a main-update ruleset (line 150), and the AC-02 row verifies only "direct App main-push denial". Nothing stops the App, or code running with its token, from creating, moving or deleting a `v*` tag on an unreviewed commit such as a Renovate branch commit. A forged tag would then look like a release to the tag readback and to adopters whose Renovate follows tag comments. GitHub's rulesets page says tag rulesets exist and that under "Restrict creations" "only users with bypass permissions can create branches or tags whose name matches the pattern you specify", with matching "Restrict updates" and "Restrict deletions" rules, and that bypass actors can be "GitHub Apps". Whether the shared release job's `GITHUB_TOKEN` identity can be named as a bypass actor was not established on that page. If it cannot, protecting tags also means choosing a different publisher identity. That choice is a trade-off. Limitations: as in F-01.
+PROPOSAL: Add an Open Question on protecting release tags: (A) a `v*` tag ruleset restricting creation, update and deletion to the release publisher, with the App excluded from bypass and a connected denial probe in AC-02, or (B) accept the exposure and state that tag readback must also check that the tag's commit is reachable from main and has a successful release run.
+
+FINDING: F-04
+KIND: factual
+SEVERITY: should-fix
+WHERE: Design, Component release and Lab rollout (line 261); AC-07; Test Plan row AC-07
+EVIDENCE: Line 261 says "A failed test or conflicting pre-existing tag holds publication without moving tags or automatically retrying." At the pinned tag action 8cf5869816cf71437052ac97d086e00526bf2d89, `scripts/tag.sh` checks the remote with `git ls-remote --tags origin "refs/tags/$TAG"`. If the tag exists, it prints "Tag $TAG already exists on remote. Skipping tagging." and calls `finish false "" "" tag-exists`, which exits 0 without comparing the tag's commit to HEAD. Only a local-only tag on a different commit fails with `exit 1`. At b18de6d2f305f971afe01ba31e17bde5966b1567, `gh-release.yml` publishes from the computed version rather than the pushed tag, so that "If an earlier run pushed the tag but failed to publish, this run completes the release", and "An existing release is never changed". So a remote tag that already exists on another commit gives a green run with `tagged: false`, and the publish step still runs for that version. The run is not held. A superseded run (line 258) also ends with no tag, so the owner cannot tell these outcomes apart without reading the output. One implementer would rely on the shared workflow and get a silent success. Another would add a caller preflight that compares the existing tag's peeled commit with the source commit and fails. The AC-07 row has no conflicting-tag case, while delivery.md asks to "surface failures instead of treating them as an absent release". Limitations: as in F-01. `scripts/publish-release.sh` in gh-release-action 5bb1cd41296b2bb15ec62c57a674460cef547d1a was not read, so what it does with an existing tag on a different commit is unknown.
+PROPOSAL: State whether the caller preflight detects a pre-existing release tag on a different commit and fails before the shared publisher runs, or accept the shared workflow's tag-exists success and reword line 261. Add the chosen case to the AC-07 row.
+
+FINDING: F-05
+KIND: factual
+SEVERITY: should-fix
+WHERE: Context, Owner summary (lines 36, 37 and 62); Design, Component release and Lab rollout (lines 268 to 279); AC-07; Test Plan row AC-07
+EVIDENCE: Lines 269 to 272 make the document `complete` on the feature branch before the single `Refs #1` PR. Line 272 says "No component post-merge evidence commit or second implementation PR is required". First publication, the tag readback and the released-SHA fixture run happen afterwards (line 274), and line 276 closes issue 1 "after those release checks pass". This keeps branch-only editing and one PR per feature, which resolves R-6 F-02. The cost is that a failure found after merge has no defined route. Examples are a tag readback that does not match the source, a released-SHA caller run that fails, or an output that differs from the pre-release proof. feature-documents.md says "`complete` is terminal for its scope; new scope is a new feature", and delivery.md says the feature "is delivered once every one of those paths has published". The document never says whether such a fix is a new feature document, what stays tracked on issue 1, or whether Lab's dependency on "the first verified release" (line 283) waits. Line 261 covers only a failed test or a conflicting tag in the release run itself. The removal also changes behavior. At R-6 the document stayed in-progress until delivery, and public evidence lived in this document. Now the component's release evidence lives only in the private Lab record (line 275). The Open Questions line names only two owner choices, Lab ownership and automatic releases, so the record does not show that the owner chose completion before delivery. Limitations: as in F-01.
+PROPOSAL: State what happens when a post-merge delivery check fails: which document or issue tracks the fix, whether issue 1 stays open, and whether Lab's grant waits. If completion before delivery was not an explicit owner choice, record it as one in Open Questions, recommending the current removal.
+
+FINDING: F-06
+KIND: factual
+SEVERITY: nit
+WHERE: Context, Owner summary (lines 36, 37 and 53 to 62)
+EVIDENCE: The Owner summary does not mention three things the Design now requires. Line 271 makes the source spec complete at the PR while issue 1 stays open until delivery. Line 275 records the release readbacks and the released-SHA run only in the private Lab rollout and its operating record. Line 280 requires "a separately approved fixture-only App" for any fixture session after production access, which means registering a second App. feature-documents.md asks the summary to cover "permissions, trade-offs, validation state and owner decisions". Limitations: as in F-01.
+PROPOSAL: Add one or two sentences to the Owner summary covering completion before delivery, where delivery evidence is kept, and the separate fixture-only App for later sessions.
 
 ## Sources
 
