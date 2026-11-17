@@ -1,6 +1,6 @@
 ---
 status: draft
-status_description: "R-1 retained; pilot and private-log direction selected, review corrections and design clarifications pending."
+status_description: "Owner decisions and R-1 corrections applied; independent re-review and acceptance pending."
 issue: null
 goal: "VHCO repositories receive reviewable dependency updates through an owner-operated GitHub Actions runner."
 covers:
@@ -14,163 +14,181 @@ covers:
 
 # Plan: Shared Renovate runner
 
-Run Renovate for selected VHCO repositories through one reusable workflow and an organization scheduler.
+Run Renovate for selected VHCO repositories through one central public scheduler and its reusable workflow.
 
 ## Context
 
 ### Owner summary
 
-The owner wants Renovate's dependency coverage while keeping private Lab configuration within owner-operated execution.
-The proposed runner lives in a public VHCO repository and uses standard Linux GitHub-hosted runners.
-GitHub provides that public-repository compute free, while any workflows triggered inside private target repositories have their own billing boundary.
+VHCO operates this updater in its public runner repository on standard Linux GitHub-hosted runners.
+The initial targets are this repository, private Lab and the public OPNsense encrypted Git backup plugin.
+Their names may appear in public configuration and run metadata.
+Their private source and credentials stay protected.
 
-A reusable workflow uses the official Renovate Action with pinned action and container revisions.
-A scheduler supplies an explicit repository list and a VHCO-owned GitHub App issues short-lived installation tokens for those selected repositories.
-The App key lives in GitHub Actions secrets.
-Each consumer keeps its own Renovate policy, with automatic merging disabled for this pilot.
-The runner uses native Renovate branch and PR handling.
+The scheduler and manual entry point call the reusable workflow locally from this repository's trusted main branch.
+The official Renovate Action runs an immutable Renovate container, and a VHCO-owned App provides short-lived installation tokens.
+Its key belongs in a main-branch-restricted GitHub environment here.
+Pilot repositories contain their dependency policies.
+GitVersion releases make the reusable workflow available to future separately pinned callers.
 
-The proposed private-log mode retains detailed Renovate output only within the ephemeral job and exposes a fixed success or failure result publicly.
-That reduces public troubleshooting detail, so its supported action/container behavior needs direct verification before live private processing.
-Private configurations, source caches and diagnostics stay out of public artifacts.
+The selected policy runs twice daily and keeps five open ordinary PRs per repository.
+Native Renovate controls allow two ordinary update commits per repository per hourly period, including new branches and automatic rebases.
+The global commit budget is disabled, giving every target its own allowance.
+Automatic merging is disabled, and native security/manual-operation exceptions still apply.
+Public standard-runner compute is free.
+Downstream private workflows and storage have their normal billing boundaries.
 
-The first proof uses synthetic repositories and dry runs, then separately approved dependency PRs against the selected pilot.
-It checks real lockfile updates, action/image pins and Lab's custom package pin.
-The design is still a draft.
-The owner selected the three-repository pilot, twice-daily cadence and private-log direction.
-R-1 returned nine should-fix findings and one nit.
-The owner accepted public target names, synthetic public fixtures, local real-Lab checks and private-output discard.
-Topology and the revised native update throttle still await an answer before the combined revision.
-Acceptance authorizes implementation and isolated tests.
-App installation, persistent credentials and live scheduling require their concrete permission and target review.
+Private Renovate output is discarded with its exit code preserved.
+Public jobs expose fixed progress and success/failure messages.
+Detailed diagnosis uses an owner-local reproduction.
+V1 uses GitHub failure notifications and a documented owner check for a stale or inactive scheduler.
+Synthetic public fixtures establish behavior, while actual Lab configuration checks run locally.
+
+R-1's nine should-fix findings and one nit have been addressed in the draft, with independent re-review pending.
+Acceptance authorizes implementation and isolated local tests.
+Connected tests require a separately approved App/test-resource setup, and pilot access, live recurring runs and release retain their concrete approval steps.
 
 ### Background
 
-The owner rejected the managed Renovate App's access to private Lab configuration on November 17, 2026.
-The requested reference pattern separates a reusable workflow, scheduling and repository policy.
-Fresh source inspection confirmed those interfaces after the Mac-to-Fedora refresh.
-Private reference identifiers and source copies remain in the owner's protected workspace.
-
-The official action supports a configuration file, a container image and an executable Docker command file.
-Renovate documents GitHub App installation tokens and selected repository lists.
-The current shared docs prefer the managed App; the owner's selected self-operated model is the explicit local exception recorded in AGENTS.md. [Official action](https://github.com/renovatebot/github-action), [GitHub platform](https://docs.renovatebot.com/modules/platform/github/)
+The official action supports an executable Docker command file and a selected Renovate container.
+Renovate supports App installation tokens, explicit repository lists and native per-repository update limits.
+The selected self-operated execution model is recorded in AGENTS.md alongside its exception to the pinned shared docs' managed-App preference. [Official action](https://github.com/renovatebot/github-action), [GitHub platform](https://docs.renovatebot.com/modules/platform/github/), [Update limits](https://docs.renovatebot.com/configuration-options/)
 
 ## Scope
 
-Deliver one reusable workflow, a scheduler/manual caller, validated examples, native Renovate configuration and tests.
-Support GitHub.com targets in one organization per invocation and standard GitHub-hosted Linux runners.
-The initial dependency scenarios cover GitHub Actions, Docker images, Bun, Composer, Go modules, OpenTofu-compatible provider locks and the existing Lab package custom manager.
+Deliver one reusable workflow, central scheduler/manual caller, checked adoption examples, native Renovate configuration and tests.
+Support GitHub.com targets in one organization per invocation on standard public GitHub-hosted Linux runners.
+The pilot allowlist is `vhco-pro/renovate-runner`, `vhco-pro/lab` and `vhco-pro/opnsense-encrypted-git-backup`.
 
-Enterprise credentials, private registry integration and enterprise-specific post-upgrade commands are deferred.
-Organization-wide discovery, automatic merging and additional runtime services need their own selected scope.
-Consumer configuration changes belong in reviewed consumer PRs.
+Dependency scenarios cover GitHub Actions, Docker images, Bun, Composer, Go modules, OpenTofu-compatible provider locks and a synthetic custom package manager matching Lab's update shape.
+Public fixtures use invented source/configuration.
+The real Lab custom-manager check belongs in Lab's local verification.
+Enterprise credentials, private registries, enterprise-specific post-upgrade commands, organization-wide discovery and extra runtime services are deferred.
+Consumer changes use reviewed consumer PRs.
 
 ## Design
 
-### Workflow and configuration
+### Central workflow and policy ownership
 
-`.github/workflows/renovate.yml` is the reusable workflow.
-The scheduler and manual caller invoke it from the trusted default branch using an explicit target list and selected dry-run mode.
-The runner reads trusted controls from its own checked-out commit.
-Repository policies remain in supported Renovate configuration files in each target.
-Examples are complete consumer files under `examples/` and checked against the reusable workflow interface.
+`.github/workflows/schedule.yml` and `.github/workflows/manual.yml` live here and call `./.github/workflows/renovate.yml`.
+Their privileged jobs execute from main and use this repository's protected environment.
+This repository owns the pilot's scheduler, App key and native concurrency boundary.
+Pilot repositories supply Renovate policy files.
+Complete examples under `examples/` document central adoption and future external invocation, with their interfaces checked against the reusable workflow.
 
-Use the official `renovatebot/github-action`, pinned to a verified commit, and an exact Renovate image digest.
+Use the official Renovate Action at a verified commit and an exact Renovate image digest.
 Pin the App-token action and other external workflow components to verified commits.
-Use native Renovate configuration validation and an explicit error exit policy.
-All proposed merges require human review.
-The runner's own dependency configuration maintains these tooling pins.
+Use native configuration validation and set `exitCodeForErrors: true`, whose experimental upstream behavior is checked with the pinned runtime.
+Known repository error states produce a nonzero aggregate result while other targets are still processed.
+Native benign results such as a disabled or archived target retain their documented treatment.
+Adoption additionally requires an observed useful PR for each selected target. [Error policy](https://docs.renovatebot.com/self-hosted-configuration/#exitcodeforerrors)
 
-Untrusted PR checks validate synthetic fixtures with read-only permissions and receive no App credential.
-Privileged execution accepts only the trusted default-branch scheduler/manual caller.
-A manually requested repository must be within both the committed allowlist and the App installation's selected repositories.
-Treat invalid modes and targets as errors before generating a token.
+The trusted organization configuration under `config/` owns the allowlist and selected rate/merge controls.
+The scheduler owns the twice-daily UTC cron, away from the start of the hour.
+The organization configuration supplies matching update windows and `updateNotScheduled: false`.
+A consistency check compares the cron and windows.
+Use native `force` overrides for those windows, `updateNotScheduled`, `commitHourlyLimit: 2`, `prConcurrentLimit: 5` and `automerge: false` so target policies cannot silently replace them.
+Other consumer rules retain their normal ownership.
+Leave `prCommitsPerRunLimit: 0` in the self-hosted configuration.
+Security fixes and owner-requested operations retain upstream exceptions, so these controls establish an ordinary-update rate, with no promise of a hard total per run. [Native controls](https://docs.renovatebot.com/self-hosted-configuration/#force), [Per-repository limits](https://docs.renovatebot.com/configuration-options/#commithourlylimit)
 
 ### Authentication and execution
 
-Use a VHCO-owned GitHub App with repository selection limited to the approved pilot.
-The concrete permission request follows Renovate's documented App requirements and discloses code, PR, issue and workflow-write access.
-Generate an installation token through `actions/create-github-app-token`, with explicit owner and repository scope, and revoke it at job completion.
-Keep the App private key in the token step's secret input.
-Pass only the required token and selected configuration into Renovate's container environment.
-The workflow's ordinary `GITHUB_TOKEN` has contents-read permission.
+Use a VHCO-owned App installed on selected repositories.
+The concrete setup approval discloses its code, PR, issue and workflow-write rights and exact repository selection.
+Store its private key only as a GitHub environment secret in this public runner repository.
+Configure an explicit selected-branch rule allowing main and denying other branches/tags, independently of checks inside YAML.
+A non-main workflow with its in-file guard removed must still be unable to obtain that secret.
 
-Run under a standard Linux label in the public scheduler repository.
-A private repository calling the reusable workflow itself incurs its caller's normal private-runner billing.
-The organization scheduler owns the pilot runs so their compute uses the public repository boundary.
-Use an invocation timeout below the one-hour installation-token lifetime.
-Restrict mounts to owned job directories and leave the host Docker socket unmounted.
-Disable repository-supplied post-upgrade commands, lifecycle scripts and unrestricted environment forwarding through supported Renovate controls. [Self-hosted controls](https://docs.renovatebot.com/self-hosted-configuration/), [Actions billing](https://docs.github.com/en/billing/concepts/product-billing/github-actions)
+Generate installation tokens through the pinned official App-token action with explicit organization/repository scope and normal completion-time revocation.
+Keep the key in that step's secret input, pass only required token/configuration values to Renovate, and give the ordinary `GITHUB_TOKEN` contents-read permission.
+PR verification runs without App credentials.
+Reject unlisted targets, wrong organizations, invalid modes and unsupported calling contexts before token generation.
+External reusable-workflow callers supply their own environment and App key and own their billing and concurrency boundary. [Environment restrictions](https://docs.github.com/en/actions/reference/workflows-and-actions/deployments-and-environments), [Reusable workflow boundaries](https://docs.github.com/en/actions/reference/workflows-and-actions/reusing-workflow-configurations)
+
+Use one multi-repository Renovate invocation for each central run and a timeout below the one-hour installation-token lifetime.
+GitHub concurrency serializes privileged runs for the organization within this central repository, retaining an active run when another is queued.
+The official action's `docker-volumes` overrides its host-wide `/tmp:/tmp` default with a job-owned temporary directory.
+Keep the Docker socket unmounted and private working data outside the checked-out public source tree.
+Disable repository-supplied post-upgrade commands, lifecycle scripts and unrestricted environment forwarding using supported native controls.
+The runner's own update configuration maintains its tool pins. [Official action](https://github.com/renovatebot/github-action), [Self-hosted controls](https://docs.renovatebot.com/self-hosted-configuration/)
 
 ### Private data and diagnostics
 
-The selected private-log policy from Q3 applies before processing a private target.
-Use the official action's executable command-file interface to capture both Renovate output streams inside the owned ephemeral runtime while preserving the process exit code.
-Verify this with the actual pinned action and container.
-Keep public job output limited to fixed runner messages and success or failure.
-Disable public debug/step-debug output and fail before token generation if debug logging is enabled.
+The public allowlist and run metadata may identify the selected VHCO repositories.
+Private configuration, source, canary values, credentials and raw diagnostics have no public cache, artifact, step summary or committed output.
+Public fixture repositories contain generic invented material.
+Real Lab configuration and its check evidence remain in Lab's local verification context.
 
-Private target source and raw logs have no public cache, artifact, step summary or committed output.
-Synthetic canaries exercise both successful and failing paths, and a test inspects resulting workflow logs, summaries and artifact inventory.
-Target-local Dependency Dashboards and PRs provide repository-scoped diagnostics.
-A failed private run requiring detailed diagnosis uses a separately authorized owner-local reproduction.
-GitHub's automatic masking complements these controls and cannot establish private-source protection alone. [Workflow security](https://docs.github.com/en/actions/reference/security/secure-use)
+Use the official action's executable command-file interface to send both Renovate output streams to `/dev/null` while preserving Renovate's exit status.
+Verify the actual pinned action/container entry point and fixed public result messages.
+Reject Actions debug/step-debug mode before token generation or processing a private target.
+Test both normal and failure paths, including outer action output and hosted logs, summaries and artifact inventory.
+Target-local dashboards and PRs provide repository-scoped feedback.
+Detailed diagnosis needs a separately authorized owner-local reproduction. [Action interface](https://github.com/renovatebot/github-action), [Masking limits](https://docs.github.com/en/actions/reference/security/secure-use)
 
-### Dependency updates, retries and rollback
+### Failures, retries and scheduler health
 
-Serialize privileged runs per organization with GitHub Actions concurrency and retain an active run when another is queued.
-Use native Renovate update detection and PR reuse on retries.
-An interrupted run can leave a bot branch or PR for the next invocation to reconcile.
-Do not add a custom state store or submission journal.
+Use native Renovate branch and PR handling on retry.
+An interrupted run may leave a bot branch or PR for the next authorized invocation to reconcile.
+A nonzero native result remains a failed job, with GitHub workflow notifications configured for the owner.
+Retry occurs on a later scheduled run or an explicit owner dispatch.
+The owner health procedure reads workflow state and the latest scheduled run through native GitHub CLI/API commands, identifies disabled scheduling or a last successful run older than 72 hours, and documents re-enabling and an approved retry.
+Exercise that procedure with inactive and stale fixtures before adoption.
 
-Keep the selected schedule and limits in the committed organization configuration.
-The proposed ordinary-update budget uses native `prCommitsPerRunLimit: 2` per invocation and `prConcurrentLimit: 5` per repository.
-Security-fix updates follow Renovate's documented limit exceptions, so this ordinary-update budget cannot establish a hard cap on every downstream CI run.
-Scheduled branch updates use `updateNotScheduled: false` with the update window to bound downstream CI churn.
-A runtime failure fails the job and awaits the next scheduled run or an owner retry.
-Changing the runner version is a reviewed pin update.
-Reverting that pin restores the previous executable workflow; existing dependency PRs still need normal repository review.
+GitHub may delay/drop scheduled jobs and disables inactive public-repository schedules after 60 days.
+V1's inactive/stale detection depends on the owner running that procedure.
+Verify failure-notification settings and identify the scheduled-workflow notification recipient during connected setup.
+Keep the operator procedure with the runner so it remains available during local host outages. [Schedule behavior](https://docs.github.com/en/actions/reference/workflows-and-actions/events-that-trigger-workflows#schedule)
 
-Fixtures verify complete package-manager output, including `bun.lock`, `composer.lock` and `go.sum` where present.
-Use Renovate's native provider-lock maintenance and OpenTofu registry configuration in an isolated fixture.
-Preserve each consumer's actual provider source identities during adoption.
-A provider registry migration is separate from the updater change. [OpenTofu and lock maintenance](https://docs.renovatebot.com/modules/manager/terraform/)
+### Test setup, adoption and versioning
 
-### Adoption and versioning
+Local implementation acceptance covers synthetic tests without GitHub credentials.
+Connected platform proofs require a separate concrete setup approval naming the VHCO-owned App, its key custody/permissions, this runner's environment and two private synthetic repositories.
+Use the working names `vhco-renovate`, `vhco-pro/renovate-fixture-a` and `vhco-pro/renovate-fixture-b` until availability and final names are verified in that approval.
+Initially limit the App installation and tokens to those fixtures, containing only invented manifests and canaries.
+The private fixtures contain manifest and configuration data only.
+This exercises multi-target behavior before extending the same App's selected access to the real pilot through a separate grant.
 
-Publish the reusable workflow through the shared `vhco-pro/gh-release-workflow` and its GitVersion tag path.
-The workflow repository is the release artifact.
-Verify its real release path with dry-run version/tag preparation and consumer invocation at the reviewed commit before release approval.
-Use exact semantic-version tags and immutable consumer commit pins.
+The connected test stage covers secret-branch denial, token scope/revocation, actual public-log inspection, concurrent runs, interrupted PR reuse and failure notifications.
+That stage authorizes writes only to its owned fixtures; connected effects require that setup approval.
+After fixture verification, separately approve pilot access and the first full dry-run.
+Compare repository refs/issues/PRs before and after the dry-run.
+Live dependency PRs and recurring scheduling need their approved target/action boundary.
+Read back actual access and an observed useful PR in every pilot target before declaring ownership transferred from any prior updater.
+Private consumer checks run locally.
 
-Begin with synthetic extraction and lookup, then full dry-run against the approved pilot using its installed App.
-Compare repository refs, issues and PRs before and after to verify the dry run's write boundary.
-Live PR creation starts only after explicit approval of the App permissions, target list and initial run.
-Disable the scheduler and revoke its App key to stop recurring execution.
-Read back actual App installation access and observed target PRs before declaring adoption complete.
-Any prior updater continues until its overlap is reviewed and the replacement's actual ownership is verified.
+Publish the reusable workflow through the shared `vhco-pro/gh-release-workflow` and GitVersion tag path.
+The source workflow repository is the release artifact.
+The central caller uses its local workflow from the same commit.
+Future external adopters pin a verified exact release commit and keep their own scheduler and credentials.
+Before release approval, exercise shared version/tag preparation in dry-run and the external-call example against the reviewed commit using synthetic fixtures.
+Exact semantic-version tags identify releases.
+A reviewed source revert restores prior central behavior.
+An external caller can restore its prior immutable pin.
+Disable the scheduler and revoke the App key for an operational stop, leaving existing dependency PRs under normal repository review. [Shared delivery](https://github.com/vhco-pro/docs/blob/0c983f6793bfe35eb96ae95ad0c361c6200af44f/knowledge/shared-delivery.md)
 
 ## Acceptance Criteria
 
-- [ ] AC-01: The reusable workflow and complete checked examples run the pinned official action and Renovate image through the public Linux scheduler.
-- [ ] AC-02: Privileged execution is confined to approved targets and trusted callers, with scoped short-lived App tokens and automatic merging disabled.
-- [ ] AC-03: Successful and failing private-target runs preserve the selected diagnostic boundary without publishing private source, canaries or credentials.
-- [ ] AC-04: Real update fixtures produce complete valid dependency changes for the supported managers and Lab package pin.
-- [ ] AC-05: Scheduled, concurrent, interrupted and retried runs obey the accepted cadence and bounds and reuse existing update PRs.
-- [ ] AC-06: Approved pilot repositories receive verified updater ownership and useful dependency PRs with their existing policy preserved.
-- [ ] AC-07: The runner's shared GitVersion release path, immutable consumer adoption and disable/recovery procedure are verified.
+- [ ] AC-01: The central public Linux scheduler and checked examples run the pinned official action and Renovate image through the reusable workflow.
+- [ ] AC-02: Native environment restrictions protect the App key, and scoped privileged execution reaches only approved targets with automatic merging disabled.
+- [ ] AC-03: Normal and failing private-target runs preserve the selected diagnostic boundary while public target names remain permitted.
+- [ ] AC-04: Real update fixtures produce complete valid dependency changes for supported managers, with synthetic public custom-manager coverage and real Lab verification kept local.
+- [ ] AC-05: Native per-repository limits, scheduling, failures, concurrency and retry preserve progress across targets, with working failure notifications and an executable owner health procedure.
+- [ ] AC-06: Approved pilot repositories receive verified updater ownership and useful dependency PRs with their remaining policies preserved.
+- [ ] AC-07: Shared GitVersion releases, local central invocation, pinned external adoption and disable/recovery procedures are verified.
 
 ## Test Plan
 
 | Criterion | Proof |
 | --- | --- |
-| AC-01 | Run actionlint, native Renovate validation, example-interface checks and the actual pinned action/container fixture. Read back public visibility and standard runner labels before any hosted execution. |
-| AC-02 | Reject wrong-organization targets, unlisted repositories, untrusted refs and invalid modes before token creation. Verify granted App scope and token revocation. Attempt repository commands/scripts in synthetic fixtures and assert they never run. |
-| AC-03 | Run the pinned action/container with private synthetic canaries in a manifest and invalid configuration, plus a simulated credential error. Assert absence from both output streams and the actual hosted log, summary and artifact inventory. Confirm original exit codes and debug-mode rejection. |
-| AC-04 | Execute real update scenarios for action/image pins, Bun plus bun.lock, Composer plus composer.lock, Go plus go.sum, an OpenTofu provider plus .terraform.lock.hcl, and the Lab custom package manager. Validate resulting files and expected diffs with each relevant native checker. |
-| AC-05 | Overlap two owned runs, terminate a synthetic update after branch creation and retry. Assert single active execution, PR reuse and accepted PR/window limits. Verify failures remain failures and receive no automatic retry loop. |
-| AC-06 | Read installation scope, perform a full dry-run and compare refs/issues/PRs. After separate write approval, inspect an actual bot PR in each pilot target and confirm applicable checks, policy and duplicate-updater ownership. Private consumer checks run locally. |
-| AC-07 | Execute shared GitVersion release dry-run and a synthetic consumer call at the reviewed SHA. Verify tag/version outputs, an exact prior-pin rollback and scheduler disable/token revocation in an owned test setup before release and live adoption approval. |
+| AC-01 | Locally run actionlint, native Renovate validation, example-interface checks and the pinned action/container fixture. Connected tests run the central workflow and external-call example on public standard Linux runners after visibility/label readback. |
+| AC-02 | Locally reject wrong organizations, unlisted targets, invalid modes and unsupported callers before token creation. In approved connected fixtures, remove the YAML guard on a non-main branch and verify native environment denial, then verify selected App access and token revocation. Synthetic repository commands/scripts must never run. |
+| AC-03 | Locally execute the pinned action/container with invented private canaries in manifests, invalid configuration and simulated credential errors. After connected-test approval, repeat using owned private fixtures and inspect actual public logs, summaries and artifact inventory. Assert canaries/contents/credentials absent, target names allowed, preserved exit codes and debug rejection before token generation. |
+| AC-04 | Execute real native updates for action/image pins, Bun plus bun.lock, Composer plus composer.lock, Go plus go.sum, an OpenTofu provider plus .terraform.lock.hcl and a synthetic custom package manager. Validate files and diffs with relevant native checkers. Run the actual Lab custom-manager/configuration checks locally in Lab with private evidence. |
+| AC-05 | Local fixtures prove two targets each receive their ordinary allowance, the third ordinary commit is held within an hourly period, and conflicting repository/package-rule schedules cannot replace the selected windows. Cover security/manual exceptions. Connected tests overlap two central runs, terminate after an owned fixture branch exists and retry to verify serialization/PR reuse. One target's invalid configuration must fail the aggregate job while another is processed; verify the owner notification. Exercise the health procedure with disabled scheduling and a stale successful-run fixture. |
+| AC-06 | After pilot-access approval, read installation scope and perform full dry-run with before/after refs/issues/PRs. After write approval, inspect a useful bot PR in each pilot, applicable local/public checks and duplicate-updater ownership. |
+| AC-07 | Locally execute shared GitVersion release dry-run. Under connected-test approval, invoke the exact-SHA external-call example using synthetic targets and verify caller-owned secret/billing/concurrency. Verify version/tag outputs, prior-source/pin rollback and scheduler disable/key-revocation procedure before release/live adoption approval. |
 
 ## Tasks
 
@@ -178,71 +196,7 @@ None yet; written once the document is planned.
 
 ## Open Questions
 
-### Q1: Which repositories should the initial App installation cover?
-
-**Recommendation:** Pilot the runner itself, Lab and the encrypted OPNsense Git backup plugin, using a committed allowlist and selected-repository installation.
-
-| Option | You get | It costs |
-| --- | --- | --- |
-| **A. Three-repository pilot** | Self-maintenance plus the two waiting Homelab consumers | Reviewed access to private Lab and three consumer checks |
-| **B. Public runner only initially** | Public validation before private access | Homelab updater adoption waits for another approved expansion |
-
-**Why this is yours:** This selects persistent App access to repository source and update rights.
-
-### Q2: How often should the scheduler run and how much update churn should it allow?
-
-**Recommendation:** Run twice daily with a native budget of two ordinary update commits across each invocation, at most five concurrent ordinary PRs per repository and automatic merging disabled. Security fixes retain Renovate's documented scheduling/rate exceptions.
-
-| Option | You get | It costs |
-| --- | --- | --- |
-| **A. Twice daily with bounded ordinary updates** | Prompt update discovery across a small pilot | More possible downstream consumer checks |
-| **B. Daily with the same ordinary-update bound** | Lower frequency | Updates can wait until the next daily run |
-
-**Why this is yours:** Runner execution and dependency PRs affect your organization activity and private CI allowance.
-
-### Q3: May the public runner discard detailed private-run logs after each job?
-
-**Recommendation:** Capture raw Renovate output only inside the ephemeral runtime, publish a fixed exit result and use target-local dashboards or an owner-local reproduction for diagnosis.
-
-| Option | You get | It costs |
-| --- | --- | --- |
-| **A. Ephemeral private diagnostics** | Private source stays out of public run output | Detailed failure investigation can need a local reproduction |
-| **B. Private hosted execution for private targets** | Access-controlled retained GitHub diagnostics | Private Actions compute uses your allowance |
-
-**Why this is yours:** This trades retained troubleshooting detail against public-log privacy and private compute cost.
-
-### Q4: Should the first scheduler and its App key live only in this public runner repository?
-
-**Recommendation:** Keep scheduler/manual entry points and the default-branch-restricted environment secret in this repository. Pilot targets carry repository policy only. The scheduler calls its local reusable workflow, and GitVersion tags support separately pinned future callers.
-
-| Option | You get | It costs |
-| --- | --- | --- |
-| **A. One public scheduler repository** | One native concurrency and billing boundary | External adopters own their own scheduler and credentials |
-| **B. Multiple caller repositories** | Separate control for each caller | Separate concurrency domains and caller-dependent compute billing |
-
-**Why this is yours:** R-1 F-01 identified an unresolved deployment topology and reusable-release consumer.
-
-### Q5: May repository names be public while private source and diagnostics stay protected?
-
-**Recommendation:** Permit pilot repository names in the public allowlist and run metadata, use generic synthetic public fixtures with real Lab checks kept local, and discard private Renovate output after preserving its exit status. Replace the default host-wide temporary mount with a job-owned directory.
-
-| Option | You get | It costs |
-| --- | --- | --- |
-| **A. Public target names and synthetic fixtures** | Simple native workflow inputs, with source kept private | Private repository existence is visible; detailed diagnosis needs local reproduction |
-| **B. Private target names and retained private diagnostics** | Repository-name and diagnostic confidentiality | Rework inputs, metadata and diagnostic storage before private processing |
-
-**Why this is yours:** R-1 F-03, F-04 and F-05 distinguish source confidentiality, target identity, fixture publication and unused log retention.
-
-### Q6: Should the central scheduler use Renovate's native per-repository update throttle?
-
-**Recommendation:** Keep one central multi-repository invocation, the accepted twice-daily cadence and five open ordinary PRs per repository. Set native `commitHourlyLimit: 2` per repository and leave the global `prCommitsPerRunLimit` disabled. Ordinary commits cover new branches and automatic rebases. Security and owner-requested operations retain Renovate's documented exceptions.
-
-| Option | You get | It costs |
-| --- | --- | --- |
-| **A. Native per-repository commit throttle** | Each target has its own ordinary-update allowance within the central run | Two ordinary commits per repository per hourly period can delay a backlog |
-| **B. Concurrent PR limit without a commit throttle** | Five open ordinary PRs per repository with faster backlog processing | More branch refreshes can trigger more downstream CI |
-
-**Why this is yours:** R-1 F-06 identified starvation under the shared budget. This choice controls update churn through Renovate's native configuration. The initial health procedure still uses explicit error exits, GitHub failure notifications and an owner check for inactive or stale schedules.
+None.
 
 ## Review Log
 
@@ -332,3 +286,6 @@ PROPOSAL: Drop the session-history wording or cite it, and cite GitHub's reusabl
 - [GitHub Actions billing](https://docs.github.com/en/billing/concepts/product-billing/github-actions) defines public standard-runner compute and separate private/storage billing.
 - [GitHub workflow security](https://docs.github.com/en/actions/reference/security/secure-use) explains token boundaries, untrusted code and masking limitations.
 - [Shared delivery](https://github.com/vhco-pro/docs/blob/0c983f6793bfe35eb96ae95ad0c361c6200af44f/knowledge/shared-delivery.md) identifies the common GitVersion release path.
+- [Environment restrictions](https://docs.github.com/en/actions/reference/workflows-and-actions/deployments-and-environments) defines selected-branch secret access.
+- [Reusable workflow boundaries](https://docs.github.com/en/actions/reference/workflows-and-actions/reusing-workflow-configurations) defines caller context, billing and permissions.
+- [Schedule behavior](https://docs.github.com/en/actions/reference/workflows-and-actions/events-that-trigger-workflows#schedule) defines delay, inactivity and notification-recipient behavior.
