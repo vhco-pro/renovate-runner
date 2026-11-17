@@ -38,7 +38,9 @@ The first proof uses synthetic repositories and dry runs, then separately approv
 It checks real lockfile updates, action/image pins and Lab's custom package pin.
 The design is still a draft.
 The owner selected the three-repository pilot, twice-daily cadence and private-log direction.
-R-1 returned nine should-fix findings and one nit; the related topology, privacy and fairness clarifications below await owner answers before one combined revision.
+R-1 returned nine should-fix findings and one nit.
+The owner accepted public target names, synthetic public fixtures, local real-Lab checks and private-output discard.
+Topology and the revised native update throttle still await an answer before the combined revision.
 Acceptance authorizes implementation and isolated tests.
 App installation, persistent credentials and live scheduling require their concrete permission and target review.
 
@@ -231,16 +233,16 @@ None yet; written once the document is planned.
 
 **Why this is yours:** R-1 F-03, F-04 and F-05 distinguish source confidentiality, target identity, fixture publication and unused log retention.
 
-### Q6: Should each repository receive its own ordinary-update budget and initial health procedure?
+### Q6: Should the central scheduler use Renovate's native per-repository update throttle?
 
-**Recommendation:** Keep the accepted twice-daily pilot, with one Renovate invocation per repository, two ordinary update commits per repository per run and five concurrent ordinary PRs per repository. For three targets that permits six ordinary update commits per scheduled run, plus native security exceptions. Use explicit error exits, GitHub failure notifications and a documented owner check for inactive or stale scheduling in v1.
+**Recommendation:** Keep one central multi-repository invocation, the accepted twice-daily cadence and five open ordinary PRs per repository. Set native `commitHourlyLimit: 2` per repository and leave the global `prCommitsPerRunLimit` disabled. Ordinary commits cover new branches and automatic rebases. Security and owner-requested operations retain Renovate's documented exceptions.
 
 | Option | You get | It costs |
 | --- | --- | --- |
-| **A. Two updates per repository** | Every pilot repository can advance in each run | Up to six ordinary update commits per three-repository run; inactivity detection uses the owner health procedure |
-| **B. One update per repository** | Every repository advances with less churn | Up to three ordinary update commits per run; the same health procedure applies |
+| **A. Native per-repository commit throttle** | Each target has its own ordinary-update allowance within the central run | Two ordinary commits per repository per hourly period can delay a backlog |
+| **B. Concurrent PR limit without a commit throttle** | Five open ordinary PRs per repository with faster backlog processing | More branch refreshes can trigger more downstream CI |
 
-**Why this is yours:** R-1 F-06 identified starvation under the shared budget. F-07 identified failure visibility and GitHub schedule inactivity limits.
+**Why this is yours:** R-1 F-06 identified starvation under the shared budget. This choice controls update churn through Renovate's native configuration. The initial health procedure still uses explicit error exits, GitHub failure notifications and an owner check for inactive or stale schedules.
 
 ## Review Log
 
