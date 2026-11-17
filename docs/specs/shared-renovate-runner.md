@@ -212,6 +212,79 @@ None yet; written once the document is planned.
 
 | Date | Review | Kind | Commit | Model | Isolation | Outcome |
 | --- | --- | --- | --- | --- | --- | --- |
+| 2026-11-17 | R-1 | spec | `2af283e8330ba2a73ab0a56bf780577829fc546d` | claude-opus-5-5 | procedural | Nine should-fix findings and one nit; first-party assistant model attested, read-only source/Git preserved; lint passed, some checks denied. |
+
+### R-1
+
+FINDING: F-01
+KIND: judgement
+SEVERITY: should-fix
+WHERE: Context (Owner summary, lines 24, 28 and 29); Design, Workflow and configuration (lines 69 to 73); Design, Authentication and execution (lines 91 and 95 to 97); Design, Dependency updates, retries and rollback (line 118); Design, Adoption and versioning (lines 138 to 141); AC-01; AC-07; Test Plan rows AC-01 and AC-07
+EVIDENCE: The document never says which repository holds the scheduler/manual caller and the App private key secret. Line 24 has the runner in "a public VHCO repository". Line 95 says "the public scheduler repository". Line 73 calls the examples "complete consumer files". Line 141 calls for "immutable consumer commit pins". Line 118 serializes runs "per organization with GitHub Actions concurrency". GitHub's concurrency page ties a group to one repository ("another job or workflow using the same concurrency group in the repository is in progress"), so callers in different repositories are not serialized. The pinned delivery.md Pinning and updates section says "do not add a Renovate workflow, runner, scheduler, or updater token to each repository". Line 96 already concedes that a private caller is billed to that caller. If the scheduler calls the workflow locally from this repository, the GitVersion release and pinned-consumer path in lines 138 to 141 has no consumer for the pilot. If consumer repositories call it, per-organization serialization, the public billing boundary and the delivery rule all fail. Limitations: Git commands (rev-parse, ls-tree, status, remote) were denied in this session. `vh-adlc fresh` reported local_sha 2af283e8330ba2a73ab0a56bf780577829fc546d, remote none and spec review stale (no-review). `vh-adlc lint` returned pass. `vh-adlc gate planned` failed on no_open_questions, spec_review_fresh, spec_review_clean and accepted.
+PROPOSAL: Add an Open Question on where the scheduler and the App key secret live: (A) a scheduler in this same public repository that calls the workflow locally, or (B) separate caller repositories that pin released tags. State what each option means for concurrency scope, billing, the delivery rule and what the GitVersion release actually serves. Recommend the simpler single-repository option.
+
+FINDING: F-02
+KIND: factual
+SEVERITY: should-fix
+WHERE: Design, Workflow and configuration (lines 81 to 84); Design, Authentication and execution (line 91); AC-02; Test Plan row AC-02
+EVIDENCE: Line 82: "Privileged execution accepts only the trusted default-branch scheduler/manual caller." Line 91: "Keep the App private key in the token step's secret input." Repository secrets in a repository are available to a workflow_dispatch run on any branch. Anyone who can push a branch can edit the workflow file on that branch, delete the ref check and still read the App key. The AC-02 proof "Reject ... untrusted refs before token creation" tests the check in the default-branch workflow, so it passes on an implementation that can be bypassed this way. GitHub's native control for this case is an environment whose secret is limited to the default branch by a deployment branch policy. The document does not mention it.
+PROPOSAL: Store the App key as an environment secret restricted to the default branch, and say so in Design. Add an AC-02 proof that dispatches the workflow from a non-default branch with the guard removed and confirms the secret is not available.
+
+FINDING: F-03
+KIND: judgement
+SEVERITY: should-fix
+WHERE: Context (Owner summary, lines 23 and 37; Background, line 46); Scope (line 59); Design, Workflow and configuration (line 83); Design, Private data and diagnostics (lines 107 and 110); AC-03; Test Plan row AC-03; Q1 (lines 180 and 184)
+EVIDENCE: Repo AGENTS.md says "Keep private source, provider credentials and runtime state outside this public repository and its published assets". The pinned docs AGENTS.md says "Keep private credentials and unrelated organization details out of this repo." The design commits an allowlist of private target repositories to the public repository (line 83, Q1 line 180). A public run also shows its dispatch inputs and run metadata. This document is itself in the public repository and already names the private Lab and the "encrypted OPNsense Git backup plugin" (line 180). The private-data design (lines 107 to 110) and AC-03 cover only source, canaries and credentials. Repository identity is never treated as either public or private, so two implementers could differ on whether names may appear in committed config, inputs and logs.
+PROPOSAL: Add an Open Question on whether private repository names may appear in the public allowlist, run inputs and this document. Option A accepts the exposure. Option B keeps the list in a secret or variable and uses fixed public messages. If names are private, extend AC-03 to assert that they are absent too.
+
+FINDING: F-04
+KIND: judgement
+SEVERITY: should-fix
+WHERE: Context (Owner summary, line 37); Scope (line 59); Design, Dependency updates, retries and rollback (line 131); AC-04; Test Plan row AC-04
+EVIDENCE: Scope covers "the existing Lab package custom manager". AC-04 requires "Real update fixtures ... for the supported managers and Lab package pin". The covered paths `tests/` and `examples/` are in the public repository. A real fixture for Lab's custom manager copies part of private Lab configuration (its matching rules and package identity) into public tests, against the repo AGENTS.md boundary. The document does not say whether the fixture is a synthetic equivalent or which parts of Lab's configuration may be published.
+PROPOSAL: Add an Open Question on whether the Lab package fixture is (A) a synthetic custom manager of the same shape, kept in the public repository, or (B) a check against the real Lab configuration that runs only in Lab's local CI. Reword AC-04 to match the answer.
+
+FINDING: F-05
+KIND: judgement
+SEVERITY: should-fix
+WHERE: Context (Owner summary, lines 33 and 34); Design, Authentication and execution (line 99); Design, Private data and diagnostics (lines 105 to 107); AC-03; Test Plan row AC-03; Q3 (line 202)
+EVIDENCE: Line 105 adds a command file that captures "both Renovate output streams inside the owned ephemeral runtime". No step reads the capture. Line 113 sends detailed diagnosis to a separate owner-local reproduction. A captured file that nobody reads behaves the same as discarding the output, and it leaves one more copy of private output on disk. The official action mounts the command file at `/<basename>` and runs it as the container command with `--rm`. The README says `docker-volumes` "Defaults to `/tmp:/tmp`". So anything written under /tmp, including a capture there, lands on the runner host's /tmp unless that default is overridden. Line 99, "Restrict mounts to owned job directories", does not say the default must be replaced.
+PROPOSAL: Replace the capture with a command file that runs Renovate with both streams sent to /dev/null and exits with Renovate's status, unless the owner names a reader for the capture. Also state that `docker-volumes` is set to a job-owned directory instead of the `/tmp:/tmp` default.
+
+FINDING: F-06
+KIND: factual
+SEVERITY: should-fix
+WHERE: Context (Owner summary, line 30); Design, Workflow and configuration (line 72); Design, Dependency updates, retries and rollback (lines 123 to 126); AC-05; AC-06; Test Plan rows AC-05 and AC-06; Q2 (line 191)
+EVIDENCE: Renovate's self-hosted configuration page defines prCommitsPerRunLimit as a global option: "Set the maximum number of commits per Renovate run." With one invocation over several repositories and a limit of 2, the repositories processed first can use the whole budget on every run. Later pilot repositories would then get no ordinary updates, which defeats AC-06. Schedule ownership also conflicts. Line 30 says "Each consumer keeps its own Renovate policy". Line 123 says "Keep the selected schedule and limits in the committed organization configuration". Repository config overrides global config for schedule, so a consumer schedule can fall outside the twice-daily cron. The AC-05 proof uses one synthetic update and tests neither the multi-repository budget nor a schedule mismatch. Limitation: the configuration-options page was read only in part, and the self-hosted section I read did not say whether security updates are exempt from prCommitsPerRunLimit.
+PROPOSAL: Say whether the commit budget is global per invocation or per repository, for example one invocation per repository. Say which file owns schedule and updateNotScheduled. Add an AC-05 scenario with at least two repositories that shows every repository receives updates within the accepted cadence.
+
+FINDING: F-07
+KIND: factual
+SEVERITY: should-fix
+WHERE: Design, Workflow and configuration (line 77); Design, Private data and diagnostics (lines 107 and 112); Design, Dependency updates, retries and rollback (line 127); AC-05; Test Plan row AC-05
+EVIDENCE: Line 77 asks for "an explicit error exit policy" but never names it. The self-hosted page offers exitCodeForErrors, which is "experimental" and "off by default". Under the discard design, a fixed success or failure result is the only public signal, so whether one repository's error fails the job decides whether the owner ever learns of it. GitHub's events page says "In a public repository, scheduled workflows are automatically disabled when no repository activity has occurred in 60 days" and that schedule "can be delayed during periods of high loads". The document does not define how a disabled or silently failing scheduler is noticed. Line 127, "awaits the next scheduled run", assumes a next run will happen.
+PROPOSAL: Name the exit policy, for example exitCodeForErrors or failing on any repository error. State how failures and an auto-disabled schedule reach the owner. Add AC-05 proofs for a single-repository error inside a multi-repository run and for detecting a disabled schedule.
+
+FINDING: F-08
+KIND: factual
+SEVERITY: should-fix
+WHERE: Context (Owner summary, lines 37 and 41 to 42); Design, Adoption and versioning (lines 143 to 145); AC-02; AC-03; AC-05; Test Plan rows AC-02, AC-03 and AC-05
+EVIDENCE: Line 41 says "Acceptance authorizes implementation and isolated tests" and line 42 says "App installation, persistent credentials and live scheduling require their concrete permission and target review." Several proofs need an installed App and a hosted run in the public repository against a private repository: AC-02 "Verify granted App scope and token revocation", AC-03 "the actual hosted log, summary and artifact inventory" for private-target runs, and AC-05 "Overlap two owned runs ... PR reuse". The Test Plan does not name the test App, the private synthetic repositories or the approval stage each proof runs under. An implementer authorized only by acceptance cannot execute these proofs, and two implementers would set up different test identities.
+PROPOSAL: Name an owned test App and synthetic private repositories that are separate from the pilot. For each hosted proof, state whether it runs under acceptance or needs the later App approval.
+
+FINDING: F-09
+KIND: judgement
+SEVERITY: should-fix
+WHERE: Q3 (lines 200 to 209); Scope (line 58); Design, Authentication and execution (lines 95 to 97); AC-01
+EVIDENCE: Repo AGENTS.md records "an organization-operated Renovate runner on standard GitHub-hosted runners in a public VHCO repository". Q3 option B, "Private hosted execution for private targets", moves private targets to private Actions compute. That contradicts the recorded execution model, Scope line 58, Design lines 95 to 97 and AC-01 "through the public Linux scheduler". The option table does not say that choosing B means changing repo AGENTS.md and reworking the scope.
+PROPOSAL: In Q3 option B's cost, state that it amends the repository's recorded execution model and changes Scope, Design and AC-01. Alternatively, split that change into its own Open Question.
+
+FINDING: F-10
+KIND: factual
+SEVERITY: nit
+WHERE: Context, Background (lines 46 to 49); Design, Authentication and execution (lines 96 and 100)
+EVIDENCE: Lines 46 to 49 have no citations: the owner's rejection date, "Fresh source inspection confirmed those interfaces after the Mac-to-Fedora refresh". feature-documents.md says "Context and Design cite their claims". documentation.md says "Keep the current or intended state, not the conversation that produced it." Line 96, on reusable-workflow caller billing, is cited to the Actions billing page, and that page does not cover reusable workflows.
+PROPOSAL: Drop the session-history wording or cite it, and cite GitHub's reusable-workflow documentation for the caller-billing claim.
 
 ## Sources
 
