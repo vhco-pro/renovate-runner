@@ -317,6 +317,7 @@ None. The owner selected separate Lab rollout ownership and automatic main relea
 | 2026-11-17 | R-4 | spec | `f8b3a2b82522f3fc18823aa49177137b99a18d32` | claude-opus-5-5 | procedural | Five should-fix findings and one nit; first-party assistant model attested, source/Git preserved; lint/freshness observed and later checks denied. |
 
 | 2026-11-17 | R-5 | spec | `2ca47106f9d8064c7b68461554aa65ef787a5ec2` | claude-opus-5-5 | procedural | Four factual should-fix findings and one nit; first-party assistant attested, source/Git preserved; reviewer Bash denied. |
+| 2026-11-17 | R-6 | spec | `84869c3f8b89738ffef5198ba1d986c19a3323de` | claude-opus-5-5 | procedural | Three factual should-fix findings and one nit; first-party assistant attested, source/Git preserved; reviewer Bash denied. |
 
 ### R-1
 
@@ -597,6 +598,36 @@ PROPOSAL: Add the manual-only release dry-run caller to the list on line 204.
 ---
 
 Bash was blocked in this session, so I couldn't run `vh-adlc lint`, `fresh`, `gate` or `review check`, any Git commands, or `gh`. I read HEAD from `.git/refs/heads/main`. I read the pinned public sources only as web-fetch summaries and short quotes, not as whole files. I couldn't see private Lab issue 3. I didn't byte-compare the stored R-1 to R-4 records with their original text.
+
+### R-6
+
+FINDING: F-01
+KIND: factual
+SEVERITY: should-fix
+WHERE: Context, Owner summary (lines 37 and 58); Design, Component release and Lab rollout (lines 252 to 260); AC-07; Test Plan row AC-07
+EVIDENCE: Line 253 says "Its release job depends on successful required tests for that exact commit". Line 254 puts that job in one group, `release-${{ github.repository }}`, with `queue: max` and `cancel-in-progress: false`. Line 260 says "After enablement, reviewed main merges automatically use GitVersion to publish normal releases." GitHub's concurrency page says pending runs are "processed in first-in-first-out (FIFO) order according to the time each one started waiting on the concurrency group", and adds that "ordering is not guaranteed". A job-level group on a job that depends on tests starts waiting only once its tests finish. Take two reviewed merges, A and then B, landing close together, where B's tests finish first. B's run tags B. A's run then computes a version on A, which cannot reach B's tag. Two outcomes are possible. If A computes the same version, it hits the conflicting-tag hold on line 256 and fails. If A's commits call for a smaller bump, A publishes a lower version on an older commit after B's release, and that release can be marked latest. Serializing the runs stops simultaneous writes, but it does not stop a stale commit from publishing. delivery.md says "Decide what a push releases by comparing against the last release tag" and "Serialize publication where competing runs could conflict". The document says neither whether the group sits at workflow or job level nor what a run does when its commit is no longer main's head or is already covered by a newer tag. In the AC-07 row, "serialized overlapping releases" passes on both designs. This traces to the R-5 F-02 repair. Limitations: Bash was denied by the session's permission mode, so `vh-adlc lint`, `fresh`, `gate`, `review check`, Git commands and `gh` reads were not run. HEAD was read from .git/refs/heads/main as 84869c3f8b89738ffef5198ba1d986c19a3323de, and the session snapshot reported a clean tree. Public pages were read through web fetch summaries and short quotes. The GitHub concurrency page does not say when a job-level group is entered relative to `needs`. Private Lab issue 3 was not observed. The stored R-1 to R-5 records were compared only by reading, not byte for byte against the original returned text.
+PROPOSAL: Say whether the release concurrency group is set at workflow level or job level. Require the release job to publish only when its commit is still main's head, or is not already an ancestor of a newer release tag, and otherwise end visibly without tagging. Add an out-of-order case to the AC-07 row.
+
+FINDING: F-02
+KIND: factual
+SEVERITY: should-fix
+WHERE: Context, Owner summary (line 61); Design, Component release and Lab rollout (lines 263 to 268); AC-07; Test Plan row AC-07
+EVIDENCE: Line 264 says "The source integration PR is an explicitly owner-approved in-progress PR with `Refs #1`". Line 265 says "The document stays in-progress after that merge and throughout first-release delivery". Line 266 records the tag, source and release readbacks and the fixture run "in this document's task/evidence history". Line 267 then calls for "the final independent implementation review and complete gate after delivery evidence is recorded". The pinned delivery.md says that after the claim commit "the document is edited only on that branch and returns to the default branch with the PR", and it requires "One PR per feature". The feature-documents rules block puts `on_feature_branch_if_set` and `feature_tree_clean` in the complete gate, and a document "keeps" its `branch` "until the feature is closed". Once the integration PR merges, the document does not say where the post-merge evidence commits, the implementation review target and the complete-gate commit land, or how they reach main. Two careful implementers would do different things. One would commit the evidence straight to main, which breaks the branch-only editing rule and fails `on_feature_branch_if_set` from main. The other would continue on the feature branch and open a second PR with `Closes #1`, which breaks the one-PR rule unless the owner allows an exception. This traces to the R-5 F-04 repair. Limitations: as in F-01.
+PROPOSAL: Name the branch that holds the post-merge evidence, the final implementation review target and the complete transition, and the route by which it returns to main. If that route needs a second PR for this feature, raise it as an Open Question rather than assume an exception to the one-PR rule.
+
+FINDING: F-03
+KIND: factual
+SEVERITY: should-fix
+WHERE: Context, Owner summary (lines 59 and 60); Design, Authentication and execution (lines 144 to 146); Design, Connected fixture setup (lines 212, 213, 228 and 229); Design, Component release and Lab rollout (lines 263 and 272); AC-02; AC-07; Test Plan rows AC-02 and AC-07
+EVIDENCE: Line 213 says a fixture private key "can authorize every installation selected for that App, regardless of one token's requested repository subset". Line 212 keeps the App fixture-only "throughout this stage". Line 144 requires fixture key retirement "before Lab grants real-repository access", and line 145 has Lab generate a production key for the same App. After first publication, line 263 runs "an external caller at that released SHA under a fresh fixture grant if earlier credentials have been retired", and line 229 says such a session needs "a new test key". Line 272 says Lab "consumes the first verified release". The document never puts Lab's real-repository grant and this post-release fixture session in order, and never says whether "verified" includes the released-SHA fixture run. If Lab's grant comes first, the new fixture key held in the public caller fixture's environment can mint tokens for the private Lab installations. That is the exposure the R-3 F-03 repair removed, and the line 144 ordering rule then covers only the first session. Limitations: as in F-01.
+PROPOSAL: Either require the released-SHA fixture session and its key retirement to finish before Lab's real-repository grant, defining "verified release" to include that run, or state what removes the fixture key's authority over real installations when that session runs after Lab's grant. Add the ordering check to the AC-02 or AC-07 row.
+
+FINDING: F-04
+KIND: factual
+SEVERITY: nit
+WHERE: Review Log (lines 312 to 319); Context, Owner summary (line 53)
+EVIDENCE: A blank line at line 318 separates the R-5 row on line 319 from the table that starts on line 312. In GitHub-flavoured Markdown a blank line ends a table, so the R-5 row renders as a plain paragraph outside the Review Log table, and a parser that reads only that table would miss it. Line 53 says "Document lint and review-record integrity checks pass". Limitations: as in F-01. Whether `vh-adlc` reads the separated row was not observed, so no change to the binary's reading is established.
+PROPOSAL: Remove the blank line so the R-5 row, and any later rows, stay in the Review Log table.
 
 ## Sources
 
