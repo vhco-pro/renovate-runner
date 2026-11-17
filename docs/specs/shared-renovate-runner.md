@@ -203,6 +203,7 @@ None.
 | Date | Review | Kind | Commit | Model | Isolation | Outcome |
 | --- | --- | --- | --- | --- | --- | --- |
 | 2026-11-17 | R-1 | spec | `2af283e8330ba2a73ab0a56bf780577829fc546d` | claude-opus-5-5 | procedural | Nine should-fix findings and one nit; first-party assistant model attested, read-only source/Git preserved; lint passed, some checks denied. |
+| 2026-11-17 | R-2 | spec | `c5462edfb07c80e2e1659c576d5d5dd964a63dc5` | claude-opus-5-5 | procedural | Eight should-fix findings and four nits; first-party assistant model attested, source/Git preserved; reviewer Bash denied, static review only. |
 
 ### R-1
 
@@ -275,6 +276,92 @@ SEVERITY: nit
 WHERE: Context, Background (lines 46 to 49); Design, Authentication and execution (lines 96 and 100)
 EVIDENCE: Lines 46 to 49 have no citations: the owner's rejection date, "Fresh source inspection confirmed those interfaces after the Mac-to-Fedora refresh". feature-documents.md says "Context and Design cite their claims". documentation.md says "Keep the current or intended state, not the conversation that produced it." Line 96, on reusable-workflow caller billing, is cited to the Actions billing page, and that page does not cover reusable workflows.
 PROPOSAL: Drop the session-history wording or cite it, and cite GitHub's reusable-workflow documentation for the caller-billing claim.
+
+### R-2
+
+FINDING: F-01
+KIND: judgement
+SEVERITY: should-fix
+WHERE: Context, Owner summary (line 34); Design, Central workflow and policy ownership (lines 87 to 90); Design, Failures, retries and scheduler health (lines 135 and 136); Design, Test setup, adoption and versioning (lines 153 and 155 to 156); AC-05; Test Plan rows AC-05, AC-06 and AC-07
+EVIDENCE: Line 88 says the organization configuration supplies "matching update windows and `updateNotScheduled: false`", and line 90 forces those windows. Line 135 says "Retry occurs on a later scheduled run or an explicit owner dispatch". Line 136 documents "an approved retry". Renovate's scheduling page says the program must be running and the schedule must allow updates, that cron "must use the `*` wildcard for the minutes value" with granularity "at least one hour", and that a schedule such as running Renovate "for one hour each Sunday" "will cause problems". With forced windows and updateNotScheduled false, an owner dispatch outside a window creates and rebases no ordinary branches. That also affects the connected retry, interrupted PR reuse, external-call and full dry-run proofs (lines 153 and 155, Test Plan rows AC-05, AC-06 and AC-07). The document never gives the window width. GitHub's events page says the schedule "can be delayed during periods of high loads" and "some queued jobs may be dropped", and line 110 queues a run behind an active one, so a delayed or queued run can start after a narrow window closes and then do nothing. This traces to the R-1 F-06 repair, which added forced windows and a cron/window consistency check. Forcing an always-open schedule would keep the cadence on the GitHub cron alone, block repository schedules just as well, make dispatch retries effective and remove the consistency check. It behaves differently, though, because ordinary updates could then happen on manual runs. Limitations: Bash was denied in this session, so `vh-adlc lint`, `fresh`, `gate` and Git commands were not run. HEAD was read from .git/refs/heads/main as c5462edfb07c80e2e1659c576d5d5dd964a63dc5, and the session snapshot reported a clean tree. The embedded R-1 records match /tmp/eg-shared-renovate-opus.MhQ1A4/returned.txt after its header lines when compared by reading.
+PROPOSAL: Add an Open Question recommending removal: (A) force an always-open schedule and let the twice-daily cron set the cadence, dropping the window consistency check, or (B) keep forced windows, state their width and say that dispatch retries and connected proofs run only inside a window.
+
+FINDING: F-02
+KIND: factual
+SEVERITY: should-fix
+WHERE: Context, Owner summary (line 37); Design, Central workflow and policy ownership (line 93); Design, Authentication and execution (lines 98 and 103); Design, Test setup, adoption and versioning (line 147); AC-02; AC-05; Test Plan rows AC-02 and AC-05
+EVIDENCE: Line 98 says the setup approval "discloses its code, PR, issue and workflow-write rights". Renovate's GitHub platform page lists these App repository permissions: Administration read, Checks read and write, Commit statuses read and write, Contents read and write, Dependabot alerts read, Issues read and write, Merge queues read and write, Metadata read, Pull requests read and write and Workflows read and write, plus organization Members read. Line 37 and line 93 rely on "native security" exceptions, and the AC-05 row says "Cover security/manual exceptions". On GitHub, Renovate needs read access to Dependabot alerts to find vulnerability alerts. The create-github-app-token README says a token "inherits all of the installation's permissions" by default. One implementer could follow line 98 and grant four rights, so security updates and status checks fail. Another could grant Renovate's documented set. Line 103 does not say whether the token is narrowed with permission inputs.
+PROPOSAL: List the exact App repository and organization permissions the runner needs, including Dependabot alerts read if security exceptions stay in scope. State whether the token step narrows permissions, and add a connected AC-02 readback of the granted set.
+
+FINDING: F-03
+KIND: factual
+SEVERITY: should-fix
+WHERE: Context, Owner summary (lines 28 to 30); Scope (line 61); Design, Central workflow and policy ownership (lines 73 to 75); Design, Authentication and execution (lines 97 to 101); AC-02; Test Plan row AC-02
+EVIDENCE: Line 100 limits the environment secret to main, and line 101 says a non-main workflow "must still be unable to obtain that secret". Line 61 makes `vhco-pro/renovate-runner` itself a pilot target, so the App's installation token gets contents and workflow write on the repository that holds the key (line 98). Anyone or anything that can push to main can change `.github/workflows/` there, and the next main run then receives the long-lived App key. That includes repository writers and code running inside the Renovate container with the token. The document requires no branch ruleset or protection on main that blocks direct pushes, including pushes from the App, and the AC-02 proof tests only a non-main branch. The main-only environment is only as strong as main's write controls.
+PROPOSAL: Require a main ruleset that blocks direct pushes and requires reviewed PRs for every actor, the App included, as part of the environment design. Add a connected AC-02 check that a direct App push to main is rejected.
+
+FINDING: F-04
+KIND: factual
+SEVERITY: should-fix
+WHERE: Context, Owner summary (line 45); Scope (line 66); Design, Test setup, adoption and versioning (line 146); AC-04; AC-05; Test Plan rows AC-04 and AC-05
+EVIDENCE: Line 146 says "Local implementation acceptance covers synthetic tests without GitHub credentials". The connected stage (line 153) does not list the AC-04 manager updates or the AC-05 allowance proof. So those stay local. The AC-04 row says "Execute real native updates ... Bun plus bun.lock, Composer plus composer.lock, Go plus go.sum ... Validate files and diffs". The AC-05 row says "Local fixtures prove two targets each receive their ordinary allowance, the third ordinary commit is held within an hourly period". Renovate's local platform page says it "defaults to `dryRun=lookup`", that other dryRun values "fall back to `lookup`", and that "Branch creation is not supported". So a local run produces no lock file commits and no branch history for commitHourlyLimit to count. A credential-free local proof would need a self-hosted forge such as Gitea or Forgejo. The document never names one, and line 66 defers "extra runtime services". One implementer would add a local forge. Another would move these proofs to the GitHub fixtures, which needs the separate setup approval.
+PROPOSAL: Name the platform each AC-04 and AC-05 proof runs against: a named local forge, or the approved private GitHub fixtures under the connected setup. Move any proof that needs GitHub branch history into the connected stage list on line 153.
+
+FINDING: F-05
+KIND: factual
+SEVERITY: should-fix
+WHERE: Design, Test setup, adoption and versioning (lines 147, 153, 161 to 165); AC-01; AC-07; Test Plan rows AC-01 and AC-07
+EVIDENCE: The AC-07 row says "Locally execute shared GitVersion release dry-run". The vhco-pro/gh-release-workflow README says it is a reusable workflow adopted by copying `examples/action-repo` into `.github/workflows/`, that "Dry-run is the default for PRs and manual runs" and that the version is rendered to the job summary. It describes no way to run it outside GitHub Actions. So the dry-run is a hosted run in this public repository, not a local check. The AC-01 and AC-07 rows also invoke "the external-call example" and "verify caller-owned secret/billing/concurrency". That needs a separate caller repository with its own environment and App key. Line 147's setup approval names only the App, this runner's environment and two private fixture repositories, not a caller repository. GitHub's environments page says "If you are using GitHub Free, environment secrets are only available in public repositories", and the reusable-workflow page says billing "is always associated with the caller". Under the named approval, the external-call proof has no caller repository, environment or billing owner.
+PROPOSAL: Say the release dry-run runs as a hosted run in this public repository and state the approval it runs under. Name the external-call caller repository, its visibility, environment and key custody in the connected setup approval, or narrow the AC-07 proof to an interface check.
+
+FINDING: F-06
+KIND: factual
+SEVERITY: should-fix
+WHERE: Design, Central workflow and policy ownership (line 79); Design, Authentication and execution (lines 111 to 114); AC-01; AC-04; Test Plan rows AC-01 and AC-04
+EVIDENCE: Line 79 pins "an exact Renovate image digest" but never picks the image variant. Renovate's running page says the default image "only comes with the Node.js environment" and installs required tools at runtime under `binarySource=install`. The full image "comes with most package managers" pre-installed. The self-hosted page gives `binarySource` a default of `"install"`. AC-04 needs Go, Bun and Composer to rewrite go.sum, bun.lock and composer.lock. With the default image, the digest does not fix those tool versions, and each run downloads them into the containerbase directory under the container's `/tmp`. Line 111 replaces the action's `/tmp:/tmp` default with a job-owned directory, so that directory must be writable by the image's non-root user. The action README's example runs `runuser -u ubuntu renovate`. The pinned managed-renovate page says "Pinning an action does not freeze a tool that it downloads". Two implementers would pick different variants and get different tool versions, network needs and mount permissions.
+PROPOSAL: Name the image variant and `binarySource` mode, and state how the runtime tool versions are fixed or accepted. State the ownership and permissions of the job-owned directory mounted at `/tmp`.
+
+FINDING: F-07
+KIND: factual
+SEVERITY: should-fix
+WHERE: Design, Central workflow and policy ownership (line 82); Design, Authentication and execution (lines 103 and 109); Design, Test setup, adoption and versioning (lines 151 and 155); AC-05; Test Plan row AC-05
+EVIDENCE: Line 109 uses "one multi-repository Renovate invocation for each central run and a timeout below the one-hour installation-token lifetime". Line 103 makes one token scoped to the listed repositories. Line 82 handles only "known repository error states" with other targets still processed, and the AC-05 row tests only one target's invalid configuration. Two other partial failures are left undefined. First, if a listed repository is not in the App installation, which can happen during the separate access grant on line 151 and line 155, the shared token step can fail before any target runs. The create-github-app-token README does not document this case. Second, a job timeout stops the single process in its fixed repository order. A slow earlier target can then use up the job time on every run, and later targets never run. AC-05 claims that failures "preserve progress across targets", and neither case is designed or tested.
+PROPOSAL: State the ordering rule between allowlist changes and installation grants, and what a token failure does to the run. Define the timeout behavior for later targets. Add AC-05 scenarios for an uninstalled listed repository and for a run stopped by the timeout.
+
+FINDING: F-08
+KIND: factual
+SEVERITY: should-fix
+WHERE: Design, Central workflow and policy ownership (line 84); Design, Test setup, adoption and versioning (line 158); AC-06; Test Plan row AC-06
+EVIDENCE: Line 84 says "Adoption additionally requires an observed useful PR for each selected target". AC-06 requires that pilots "receive ... useful dependency PRs", and the AC-06 row requires a "useful bot PR in each pilot". Whether a PR appears depends on upstream releases at adoption time. The runner repository is a pilot whose pins are new when it is built, so it may have no pending update. The criterion then cannot be met through no fault of the implementation, and the document does not define "useful" or other evidence such as a Dependency Dashboard that lists no pending updates.
+PROPOSAL: Define "useful PR". Accept other observed evidence, such as a successful run with a dashboard showing no pending ordinary updates, for a target that has nothing to update.
+
+FINDING: F-09
+KIND: factual
+SEVERITY: nit
+WHERE: Design, Private data and diagnostics (line 120); Design, Test setup, adoption and versioning (lines 147 to 150)
+EVIDENCE: Line 120 says "Public fixture repositories contain generic invented material". The only fixture repositories the document names are the private `vhco-pro/renovate-fixture-a` and `vhco-pro/renovate-fixture-b` (lines 147 to 150). The public fixtures are in-repository test data under `tests/`.
+PROPOSAL: Change line 120 to refer to public in-repository fixtures and the private fixture repositories by their actual locations.
+
+FINDING: F-10
+KIND: factual
+SEVERITY: nit
+WHERE: Context, Owner summary (line 47)
+EVIDENCE: Line 47 says "R-1's nine should-fix findings and one nit have been addressed in the draft, with independent re-review pending." documentation.md says "Keep the current or intended state, not the conversation that produced it." The Review Log already records the review state.
+PROPOSAL: Replace the line with the current validation state, or drop it.
+
+FINDING: F-11
+KIND: judgement
+SEVERITY: nit
+WHERE: Design, Central workflow and policy ownership (line 73); Design, Test setup, adoption and versioning (line 169)
+EVIDENCE: Line 73 adds two caller files, `.github/workflows/schedule.yml` and `.github/workflows/manual.yml`, that call the same reusable workflow. One caller file with both `schedule` and `workflow_dispatch` triggers would give the same central local call with less duplication. The one difference is that line 169's operational stop, "Disable the scheduler", would then also disable manual runs.
+PROPOSAL: Use one caller workflow with both triggers, or state why the manual entry point must survive a disabled scheduler.
+
+FINDING: F-12
+KIND: judgement
+SEVERITY: nit
+WHERE: Frontmatter (`issue: null`)
+EVIDENCE: documentation.md says every feature document has a tracking issue and "`issue: null` marks work deliberately kept local". This feature plans hosted workflows, an App and pilot rollout across public and private repositories, so it is not local work.
+PROPOSAL: File a tracking issue when the owner authorizes one and record its URL, or say why the work stays local.
 
 ## Sources
 
