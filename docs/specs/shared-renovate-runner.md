@@ -1,6 +1,6 @@
 ---
 status: draft
-status_description: "Initial design from refreshed reference sources; owner choices and independent review pending."
+status_description: "R-1 retained; pilot and private-log direction selected, review corrections and design clarifications pending."
 issue: null
 goal: "VHCO repositories receive reviewable dependency updates through an owner-operated GitHub Actions runner."
 covers:
@@ -37,7 +37,8 @@ Private configurations, source caches and diagnostics stay out of public artifac
 The first proof uses synthetic repositories and dry runs, then separately approved dependency PRs against the selected pilot.
 It checks real lockfile updates, action/image pins and Lab's custom package pin.
 The design is still a draft.
-The pilot list, cadence and diagnostic trade-off need owner decisions and independent review.
+The owner selected the three-repository pilot, twice-daily cadence and private-log direction.
+R-1 returned nine should-fix findings and one nit; the related topology, privacy and fairness clarifications below await owner answers before one combined revision.
 Acceptance authorizes implementation and isolated tests.
 App installation, persistent credentials and live scheduling require their concrete permission and target review.
 
@@ -207,6 +208,39 @@ None yet; written once the document is planned.
 | **B. Private hosted execution for private targets** | Access-controlled retained GitHub diagnostics | Private Actions compute uses your allowance |
 
 **Why this is yours:** This trades retained troubleshooting detail against public-log privacy and private compute cost.
+
+### Q4: Should the first scheduler and its App key live only in this public runner repository?
+
+**Recommendation:** Keep scheduler/manual entry points and the default-branch-restricted environment secret in this repository. Pilot targets carry repository policy only. The scheduler calls its local reusable workflow, and GitVersion tags support separately pinned future callers.
+
+| Option | You get | It costs |
+| --- | --- | --- |
+| **A. One public scheduler repository** | One native concurrency and billing boundary | External adopters own their own scheduler and credentials |
+| **B. Multiple caller repositories** | Separate control for each caller | Separate concurrency domains and caller-dependent compute billing |
+
+**Why this is yours:** R-1 F-01 identified an unresolved deployment topology and reusable-release consumer.
+
+### Q5: May repository names be public while private source and diagnostics stay protected?
+
+**Recommendation:** Permit pilot repository names in the public allowlist and run metadata, use generic synthetic public fixtures with real Lab checks kept local, and discard private Renovate output after preserving its exit status. Replace the default host-wide temporary mount with a job-owned directory.
+
+| Option | You get | It costs |
+| --- | --- | --- |
+| **A. Public target names and synthetic fixtures** | Simple native workflow inputs, with source kept private | Private repository existence is visible; detailed diagnosis needs local reproduction |
+| **B. Private target names and retained private diagnostics** | Repository-name and diagnostic confidentiality | Rework inputs, metadata and diagnostic storage before private processing |
+
+**Why this is yours:** R-1 F-03, F-04 and F-05 distinguish source confidentiality, target identity, fixture publication and unused log retention.
+
+### Q6: Should each repository receive its own ordinary-update budget and initial health procedure?
+
+**Recommendation:** Keep the accepted twice-daily pilot, with one Renovate invocation per repository, two ordinary update commits per repository per run and five concurrent ordinary PRs per repository. For three targets that permits six ordinary update commits per scheduled run, plus native security exceptions. Use explicit error exits, GitHub failure notifications and a documented owner check for inactive or stale scheduling in v1.
+
+| Option | You get | It costs |
+| --- | --- | --- |
+| **A. Two updates per repository** | Every pilot repository can advance in each run | Up to six ordinary update commits per three-repository run; inactivity detection uses the owner health procedure |
+| **B. One update per repository** | Every repository advances with less churn | Up to three ordinary update commits per run; the same health procedure applies |
+
+**Why this is yours:** R-1 F-06 identified starvation under the shared budget. F-07 identified failure visibility and GitHub schedule inactivity limits.
 
 ## Review Log
 
