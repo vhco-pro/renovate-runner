@@ -410,7 +410,18 @@ An operational stop disables scheduling and revokes the production key through t
 
 ## Tasks
 
-None yet; written once the document is planned.
+- [ ] T1 `tests/policy.test.mjs` - write executable preflight tests for caller identity, allowlist/organization, selected mode, debug rejection and forced limits; observe failure while the action preflight is absent (AC-01, AC-02, AC-03).
+- [ ] T2 `.github/actions/renovate/scripts/`, `config/` - implement the tested preflight and generated native Renovate configuration without credentials in outputs; the T1 cases pass (AC-01, AC-02, AC-03).
+- [ ] T3 `tests/workflows.test.mjs`, `tests/privacy.test.mjs` - add structured workflow/interface tests and real command exit/output probes that fail before the action and callers exist (AC-01, AC-02, AC-03, AC-05).
+- [ ] T4 `.github/actions/renovate/action.yml`, `.github/workflows/`, `examples/`, `package.json` - compose verified pinned official actions, exact caller/implementation checkouts, private temporary storage and the tested command entry point; local interface/privacy checks and actionlint pass with scheduling inactive (AC-01, AC-02, AC-03, AC-05).
+- [ ] T5 `tests/release.test.mjs`, `.github/actions/renovate/scripts/release-preflight.mjs` - observe failing release-mode/source-identity checks, then implement the bounded native-read preflight and pass automatic/manual/dry-run and source-moved cases (AC-07).
+- [ ] T6 `.github/workflows/release.yml`, `examples/` - wire the tests-first shared GitVersion release workflow with disabled-by-default publication, expected candidate and native concurrency; local checks and shared-action dry-run preparation pass without publication (AC-07).
+- [ ] T7 `tests/fixtures/`, `scripts/verify-local.mjs`, `tests/container.test.mjs` - verify the pinned full-image tool inventory, non-root temporary mount, native managers and private command behavior against synthetic inputs, retaining the original failures and actual native results (AC-01, AC-03, AC-04).
+- [ ] T8 `docs/operations.md`, `tests/operations.test.mjs`, `README.md`, `LICENSE`, `renovate.json`, `AGENTS.md` - add checked usage, native health/release/recovery procedures, repository checks and normal dependency policy; procedure/interface tests and native configuration validation pass (AC-01, AC-05, AC-07).
+- [ ] T9 `scripts/verify-connected.mjs`, `tests/fixtures/`, `examples/connected/` - persist the reproducible owned-fixture verification harness and its credential-free planning tests; it identifies exact resources, grants, commands and sanitized proof without creating remote resources (AC-01, AC-02, AC-03, AC-04, AC-05, AC-07).
+- [ ] T10 `scripts/verify-connected.mjs`, this document - after the separate concrete fixture grant, execute native App/environment, scope, manager update, queue, retry, timeout, public-output, notification and shared-release dry-run tests; record actual results and retire owned fixture credentials/access (AC-01, AC-02, AC-03, AC-04, AC-05, AC-07).
+- [ ] T11 `docs/specs/shared-renovate-runner.md`, reviewed implementation paths - obtain independent exact-source implementation review after required local and connected proof, resolve findings and run the complete gate; retain AC-06’s owner-approved Lab transfer and keep source integration, release and production adoption separate.
+
 
 ## Open Questions
 
