@@ -10,6 +10,7 @@ status: draft
 The component is being implemented. The central schedule and publication switch remain disabled.
 Local proof does not establish App restrictions, real dependency updates or GitHub queue behavior.
 Those checks run on separately approved fixtures before production adoption.
+The [connected fixture procedure](../examples/connected/README.md) names its setup and native case matrix.
 
 ## Local verification
 
