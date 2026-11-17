@@ -11,7 +11,7 @@ concurrency:
 jobs:
   test:
     runs-on: ubuntu-24.04
-    timeout-minutes: 10
+    timeout-minutes: 20
     steps:
       - name: Check out source
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -23,3 +23,7 @@ jobs:
         run: bun run test
       - name: Check workflows
         run: bun run check:workflows
+      - name: Download the pinned native runtime
+        run: bun scripts/verify-local.mjs --pull-only
+      - name: Verify the pinned native runtime
+        run: bun run test:native

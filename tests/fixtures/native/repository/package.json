@@ -1,0 +1,6 @@
+{
+  "name": "synthetic-renovate-fixture",
+  "private": true,
+  "packageManager": "bun@1.4.4",
+  "dependencies": { "is-number": "7.0.0" }
+}

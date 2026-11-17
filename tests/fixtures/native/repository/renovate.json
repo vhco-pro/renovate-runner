@@ -1,0 +1,12 @@
+{
+  "customManagers": [
+    {
+      "customType": "regex",
+      "managerFilePatterns": ["/^provider\\.yaml$/"],
+      "matchStrings": ["version: (?<currentValue>[0-9]+\\.[0-9]+\\.[0-9]+)"],
+      "depNameTemplate": "example-org/native-package",
+      "datasourceTemplate": "github-releases",
+      "versioningTemplate": "semver"
+    }
+  ]
+}
