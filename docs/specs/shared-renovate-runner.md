@@ -1,6 +1,6 @@
 ---
 status: draft
-status_description: "R-13 release-status, first-enable ordering and failed-first-publication recovery corrections applied; independent re-review pending."
+status_description: "R-14 preserved; orphaned-first-tag decision pending before applying this pass’s corrections."
 issue: https://github.com/vhco-pro/renovate-runner/issues/1
 goal: "A reusable owner-operated GitHub Actions runner produces reviewable dependency updates with verified access, privacy and recovery controls."
 covers:
@@ -401,7 +401,18 @@ None yet; written once the document is planned.
 
 ## Open Questions
 
-None. The owner confirmed source-feature completion followed by Lab delivery verification and directed use of the shared standards on November 17. Runtime work follows their action boundary through a local composite action from the workflow’s native-SHA checkout. The optional release-tag policy proposal was withdrawn after checking that standard.
+### Q10: How should an orphaned tag from a superseded first-release candidate be reconciled?
+
+**Recommendation:** A. Preserve it as an undelivered attempt and release the approved repair under its next GitVersion tag.
+
+| Option | You get | It costs |
+| --- | --- | --- |
+| **A. Retain the failed tag without delivering it** | Immutable history and a first verified release from the approved repaired candidate. | An unused version tag remains, with its abandoned-attempt disposition in the delivery record. |
+| **B. Finish the old release, then publish the repair** | A completed release for the original tag followed by a linked corrective release. | Publishes the superseded candidate before delivering its repair. |
+
+**Why this is yours:** It decides which candidate is publicly delivered after partial first-publication failure. Both preserve existing tags. No tag, release or live setting change is authorized by this draft.
+
+The owner already confirmed source-feature completion followed by Lab delivery verification and the shared release standard. The earlier optional release-tag policy proposal stays withdrawn.
 
 ## Review Log
 
