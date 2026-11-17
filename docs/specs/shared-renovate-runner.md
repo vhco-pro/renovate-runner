@@ -68,6 +68,7 @@ Code-bearing deliveries follow the shared whole-delivery CI-marker rule, includi
 Connected fixture tests require their own concrete App/test-resource approval.
 Lab owns subsequent real-repository access and recurring-run activation.
 First release approval remains separate from spec acceptance and implementation merge.
+A manual publish names its expected candidate SHA, which the preflight must match before publication.
 
 ### Background
 
@@ -296,7 +297,7 @@ Effective dry-run is true whenever publication is disabled, or when an owner dis
 The first approved publish and later recovery use `gh workflow run release.yml --ref main -f dry-run=false -f expected-sha="$RELEASE_SHA"` after enablement, and wait for that exact run’s checks/publication.
 `RELEASE_SHA` is the approved candidate for first publication and the intended current reviewed main commit for later recovery.
 The separate Renovate `manual.yml` controls dependency runs.
-Its release job depends on successful required tests for that exact commit.
+The `release.yml` publisher job depends on successful required tests for its exact run commit.
 Set workflow-level concurrency on the main/manual release caller using one repository-wide native group, `release-${{ github.repository }}`, with `queue: max` and `cancel-in-progress: false`, independent of the Renovate-run group.
 The group covers tests, source preflight and the shared release job.
 After tests and before invoking the shared publisher, read the current main head and compare it with the run’s exact source commit.
