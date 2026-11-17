@@ -1,7 +1,8 @@
 ---
-status: planned
-status_description: "Owner accepted R-16; implementation task planning is next. App grants, merge, release and activation retain their separate approvals."
+status: in-progress
+status_description: "Implementing the accepted runner on its claimed feature branch; connected grants, merge, release and production activation remain separate."
 issue: https://github.com/vhco-pro/renovate-runner/issues/1
+branch: feat/shared-renovate-runner
 goal: "A reusable owner-operated GitHub Actions runner produces reviewable dependency updates with verified access, privacy and recovery controls."
 covers:
   - .github/workflows/
