@@ -1,8 +1,8 @@
 ---
 status: draft
-status_description: "R-4 retained; component/rollout split and steady-state release policy await owner answers."
+status_description: "Owner-approved component/rollout split and automatic release policy applied; independent re-review and spec acceptance pending."
 issue: https://github.com/vhco-pro/renovate-runner/issues/1
-goal: "VHCO repositories receive reviewable dependency updates through an owner-operated GitHub Actions runner."
+goal: "A reusable owner-operated GitHub Actions runner produces reviewable dependency updates with verified access, privacy and recovery controls."
 covers:
   - .github/workflows/
   - config/
@@ -21,17 +21,20 @@ Run Renovate for selected VHCO repositories through one central public scheduler
 ### Owner summary
 
 VHCO operates this updater in its public runner repository on standard Linux GitHub-hosted runners.
-The initial targets are this repository, private Lab and the public OPNsense encrypted Git backup plugin.
-Their names may appear in public configuration and run metadata.
-Their private source and credentials stay protected.
+This component delivers reusable workflows and verifies them on owned synthetic repositories.
+The existing private Lab rollout owns adoption by this repository, private Lab and the public OPNsense encrypted Git backup plugin.
+Their names may appear publicly, while private source and credentials stay protected.
+Real App grants, scheduler activation and target-specific update evidence are recorded in that rollout.
 
 The scheduler and manual entry point call the reusable workflow locally from this repository's trusted main branch.
 The official Renovate Action runs a digest-pinned full Renovate image with bundled tools, and a VHCO-owned App provides short-lived installation tokens.
 The full image has a larger download, while its bundled tool versions are fixed by the selected digest.
 The App key belongs in a main-branch-restricted GitHub environment here.
 Native main-update restrictions exclude the App from direct updates while preserving the trusted owner-admin route for authorized documentation, feature claims and reviewed merges.
-Pilot repositories contain their dependency policies.
-GitVersion releases make the reusable workflow available to future separately pinned callers.
+Consumers contain their dependency policies.
+GitVersion releases make the reusable workflow available to separately pinned callers.
+Publication starts only after the owner approves the first release and enables it.
+After that enablement, reviewed main merges publish automatically through the shared release workflow.
 
 The GitHub cron runs twice daily, and approved manual dispatches can run at any time.
 The policy keeps five open ordinary PRs per repository.
@@ -51,7 +54,9 @@ Document lint and review-record integrity checks pass.
 Runtime and hosted verification await implementation and the connected setup grant.
 Acceptance authorizes implementation, isolated local tests and ordinary read-only public standard-runner CI.
 The shared release dry-run needs a contents-write job token, which is disclosed and authorized in the separate connected-fixture setup.
-Connected tests require a separately approved App/test-resource setup, and pilot access, live recurring runs and release retain their concrete approval steps.
+Connected fixture tests require their own concrete App/test-resource approval.
+Lab owns subsequent real-repository access and recurring-run activation.
+First release approval remains separate from spec acceptance and implementation merge.
 
 ### Background
 
@@ -63,7 +68,9 @@ The selected self-operated execution model is recorded in AGENTS.md alongside it
 
 Deliver one reusable workflow, central scheduler/manual caller, checked adoption examples, native Renovate configuration and tests.
 Support GitHub.com targets in one organization per invocation on standard public GitHub-hosted Linux runners.
-The pilot allowlist is `vhco-pro/renovate-runner`, `vhco-pro/lab` and `vhco-pro/opnsense-encrypted-git-backup`.
+The component has a trusted fixture allowlist for connected tests.
+The real pilot allowlist and rollout proof are owned by [Lab issue 3](https://github.com/vhco-pro/lab/issues/3).
+The owner selected this split on November 17, preserving the original AC-06 as an explicitly transferred rollout obligation.
 
 Dependency scenarios cover GitHub Actions, Docker images, Bun, Composer, Go modules, OpenTofu-compatible provider locks and a synthetic custom package manager matching Lab's update shape.
 Public fixtures use invented source/configuration.
@@ -77,8 +84,9 @@ Consumer changes use reviewed consumer PRs.
 
 `.github/workflows/schedule.yml` and `.github/workflows/manual.yml` live here and call `./.github/workflows/renovate.yml`.
 Their privileged jobs execute from main and use this repository's protected environment.
-This repository owns the pilot's scheduler, App key and native concurrency boundary.
-Pilot repositories supply Renovate policy files.
+This repository provides the central scheduler, App-secret environment interface and native concurrency boundary.
+Its recurring execution remains disabled until Lab activates the approved deployment.
+Lab owns the real allowlist and setting/credential installation, while consumer repositories supply their Renovate policy files.
 Complete examples under `examples/` document central adoption and future external invocation, with their interfaces checked against the reusable workflow.
 
 Use the official Renovate Action at a verified commit and the official full Renovate image at an exact digest with `binarySource: global`.
@@ -89,9 +97,12 @@ Pin the App-token action and other external workflow components to verified comm
 Use native configuration validation and set `exitCodeForErrors: true`, whose experimental upstream behavior is checked with the pinned runtime.
 Known repository error states produce a nonzero aggregate result while other targets are still processed.
 Native benign results such as a disabled or archived target retain their documented treatment.
-Adoption additionally requires target-specific evidence of actual processing, using an update PR or a successful full run and target-local dashboard showing that no ordinary updates are pending. [Error policy](https://docs.renovatebot.com/self-hosted-configuration/#exitcodeforerrors)
+Lab adoption additionally requires target-specific evidence of actual processing, using an update PR or a successful full run and target-local dashboard showing that no ordinary updates are pending. [Error policy](https://docs.renovatebot.com/self-hosted-configuration/#exitcodeforerrors)
 
-The trusted organization configuration under `config/` owns the allowlist and selected rate/merge controls.
+Trusted organization configuration under `config/` supplies selected rate/merge controls and the active allowlist installed from reviewed deployment inputs.
+The connected caller fixture supplies its own synthetic allowlist as caller-owned trusted configuration through the same validated interface.
+Check out workflow/configuration sources only at the explicit reviewed ref selected by the trusted caller, and validate organization and repository selection before token creation.
+Target repository files cannot widen that selection.
 The scheduler owns the twice-daily UTC cron, away from the start of the hour.
 Use native `force` overrides for `schedule: []`, `commitHourlyLimit: 2`, `prConcurrentLimit: 5` and `automerge: false` so target schedules cannot make delayed runs or approved manual dispatches ineffective.
 The empty Renovate schedule permits updates whenever the central process is explicitly running.
@@ -116,14 +127,18 @@ Token generation explicitly requests the approved permission subset through the 
 Connected verification reads back installation permissions and checks the requested token permissions with positive/negative API probes on owned fixtures. [App requirements](https://docs.renovatebot.com/modules/platform/github/), [Token permissions](https://github.com/actions/create-github-app-token#permission-permission-name)
 Keep the production App key in the protected environment of this central runner.
 During connected testing, the public caller fixture temporarily holds its own revocable App key under the same native protections.
-Revoke that fixture key, delete its secret and remove all fixture repositories from the App installation before granting access to the real pilot.
-Read back the selected repositories and verify that a JWT signed with the retired key is rejected before extending access to private Lab.
+At the end of the connected test session, revoke the fixture App key.
+While its protected secret still exists, run the fixture retirement workflow to sign a JWT and observe its rejection by GitHub.
+Then delete that secret, remove fixture installation access and read back both removals.
+Keep no extra private-key copy for that test.
+Record retirement before Lab grants real-repository access and generates a new production key.
+Release delivery never requires keeping a test key alive between sessions.
 Configure an explicit selected-branch rule allowing main and denying other branches/tags, independently of checks inside YAML.
 A non-main workflow with its in-file guard removed must still be unable to obtain that secret.
 Before adding a key, configure a native main-update ruleset permitting the trusted owner-admin route and excluding the App and other writers from bypass.
 This preserves the existing documentation/claim workflow and keeps code merges under owner review.
 Verify the effective rules and an installed App's rejected direct push using the key-holding public caller fixture.
-Repeat the direct-push denial on this runner after its pilot installation grant and before handing a token to Renovate. [Main update restrictions](https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/managing-rulesets/available-rules-for-rulesets#restrict-updates)
+Lab repeats the direct-push denial on this runner after its real installation grant and before handing a token to Renovate. [Main update restrictions](https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/managing-rulesets/available-rules-for-rulesets#restrict-updates)
 
 Generate installation tokens through the pinned official App-token action with explicit organization/repository scope and normal completion-time revocation.
 Keep the key in that step's secret input, pass only required token/configuration values to Renovate, and give the ordinary `GITHUB_TOKEN` contents-read permission.
@@ -169,7 +184,8 @@ Persistent slowness requires owner diagnosis or a manual dispatch restricted to 
 The selected native limits prevent budget starvation during normal processing, while a persistent timeout remains an explicit operator-recovery case.
 A nonzero native result remains a failed job, with GitHub workflow notifications configured for the owner.
 Retry occurs on a later scheduled run or an explicit owner dispatch.
-The owner health procedure reads workflow state and the latest scheduled run through native GitHub CLI/API commands, identifies disabled scheduling or a last successful run older than 72 hours, and documents re-enabling and an approved retry.
+The owner health procedure reads workflow state, the latest scheduled run and recent cancelled manual/scheduled runs through native GitHub CLI/API commands.
+It identifies disabled scheduling, a last successful run older than 72 hours and native queue-overflow cancellations, and documents re-enabling and an approved retry.
 Exercise that procedure with inactive and stale fixtures before adoption.
 
 GitHub may delay/drop scheduled jobs and disables inactive public-repository schedules after 60 days.
@@ -177,81 +193,91 @@ V1's inactive/stale detection depends on the owner running that procedure.
 Verify failure-notification settings and identify the scheduled-workflow notification recipient during connected setup.
 Keep the operator procedure with the runner so it remains available during local host outages. [Schedule behavior](https://docs.github.com/en/actions/reference/workflows-and-actions/events-that-trigger-workflows#schedule)
 
-### Test setup, adoption and versioning
-
-Local implementation acceptance covers synthetic tests without GitHub credentials.
-Connected platform proofs require a separate concrete setup approval naming the VHCO-owned App, its key custody/permissions, this runner's environment and two private synthetic repositories.
-Use the working names `vhco-renovate`, private `vhco-pro/renovate-fixture-a` and `vhco-pro/renovate-fixture-b`, and public `vhco-pro/renovate-caller-fixture` until availability and final names are verified in that approval.
-The public caller fixture has its own main-restricted environment, protected main and a separately revocable key for the same App.
-While that key exists, its authority covers all repositories selected for that App, so the App remains fixture-only until key retirement is verified.
-Its standard-runner jobs exercise an external exact-SHA invocation with caller-owned secret custody, billing and concurrency.
-Initially limit the App installation and tokens to the named fixtures, containing only invented manifests and canaries.
-Token repository selection remains explicit for each proof, including the caller fixture only when testing its App main-update denial.
-The private fixtures contain manifest and configuration data only.
-This exercises multi-target behavior before extending the same App's selected access to the real pilot through a separate grant.
+### Connected fixture setup
 
 Credential-free local tests cover static validation, controlled action/container behavior and API fixtures.
-Real manager lockfile/branch updates and per-repository commit counting run against the approved GitHub fixtures, because Renovate's local platform performs lookup without creating branches.
-The connected stage covers those updates and counts, secret-branch/main-update denial, token scope/revocation, actual public-log inspection, three overlapping runs, interrupted PR reuse, missing installation access, timeout recovery and failure notifications.
-It also explicitly authorizes the exact pinned shared release dry-run job in the public caller fixture with `GITHUB_TOKEN` contents-write permission.
-That temporary token can write repository refs and releases and is exposed to that job's pinned actions.
-The shared workflow is always passed `dry-run: true` during this test.
-That stage authorizes writes only to its owned fixtures.
-Connected effects require that setup approval.
-After the released-reference delivery check and verified fixture-key retirement, separately approve pilot access and the first full dry-run.
-Compare repository refs/issues/PRs before and after the dry-run.
-Live dependency PRs and recurring scheduling need their approved target/action boundary.
-Read back actual access and target-specific processing evidence before declaring ownership transferred from any prior updater.
-An update PR must change an identified dependency and its required lock/artifact files and pass the target's applicable checks.
-For an already-current target, accept a successful full run plus its dashboard confirming processed configuration and no pending ordinary updates, after real update behavior passed in the fixtures.
-Enable that dashboard through the reviewed pilot configuration where needed, keeping private dashboards private.
-Private consumer checks run locally.
+Connected proofs require separate approval naming the App, exact permissions, protected secret custody and owned resources.
+Use working names `vhco-renovate`, private `vhco-pro/renovate-fixture-a` and `vhco-pro/renovate-fixture-b`, and public `vhco-pro/renovate-caller-fixture`, subject to availability and the concrete approval.
+The App stays fixture-only throughout this stage.
+Its private key can authorize every installation selected for that App, regardless of one token's requested repository subset.
 
-Publish the reusable workflow through the shared `vhco-pro/gh-release-workflow` and GitVersion tag path.
+The public caller fixture's main holds minimal manual-only integration and key-retirement workflows, synthetic trusted configuration and the checked external-call example.
+It has its own main-restricted environment, protected main and revocable fixture key.
+It never receives this runner's Git history, scheduled workflow or repository-root release state.
+The private fixtures contain invented manifests, canaries and Renovate configuration only.
+The integration workflow invokes the exact reviewed reusable-workflow commit remotely, with an explicit synthetic allowlist for private fixtures A/B.
+The caller fixture joins the requested App token's repository selection only for the direct-main-update denial probe.
+Static checks establish that the real schedule/manual entry points use the same reusable workflow, inputs and concurrency group.
+Three overlapping manual invocations of that reusable job in the public caller fixture establish native queue behavior in one caller repository.
+Actual central activation and its real-environment readbacks belong to Lab.
+
+Real lockfile/branch updates and per-repository commit counting use the approved GitHub fixtures because Renovate's local platform performs lookup without creating branches.
+Connected proofs cover manager updates, per-target limits, secret-branch/main-update denial, token scope/revocation, public-log inspection, three queued runs, interrupted PR reuse, missing installation access, timeout recovery and owner notifications.
+Private fixture contents and detailed diagnostics follow the selected discard policy.
+Retire the fixture key/access as described above at the end of each active test session.
+A later fixture session requires a fresh concrete grant and new test key.
+
+### Component release and Lab rollout
+
 The source workflow repository is the release artifact.
 The central caller uses its local workflow from the same commit.
-Future external adopters pin a verified exact release commit and keep their own scheduler and credentials.
-Pre-merge release preparation runs the pinned shared workflow in the approved public caller fixture with its candidate source/history copied from the reviewed runner commit.
-This is a hosted contents-write-capable dry-run under the connected-test grant, with `dry-run: true` fixed at the caller.
-It verifies the shared path without claiming that a runner release exists.
-The production release caller lands as `workflow_dispatch` only, defaults to dry-run and passes the shared input explicitly.
-Publishing remains disabled by an unset/false repository enablement variable.
-An owner release approval may enable publishing and authorize an exact manual publish request after merge and checks.
-A push or implementation merge triggers no publication.
-Exercise the external-call example from the public caller fixture against the exact reviewed commit before merge, labelled honestly as unreleased.
-The committed example starts with `FULL_COMMIT_SHA` and a comment instructing replacement with a verified release SHA/tag.
-The example checker substitutes the reviewed SHA and an unreleased-review comment for pre-release testing.
-After first publication, update the example to the verified release commit and matching exact semantic-version comment.
-AC-07 covers pre-release preparation and reviewed-reference proof.
-Delivery remains pending until an approved real tag/release is read back and the external fixture runs against that released commit.
-Keep the tracking issue open through that delivery check, then retire the fixture key/access before any real-pilot grant.
-Exact semantic-version tags identify releases.
-A reviewed source revert restores prior central behavior.
-An external caller can restore its prior immutable pin.
-Keep separate schedule and manual caller files so disabling scheduled invocation leaves an owner-controlled recovery entry point.
-Disable the scheduled workflow and revoke the App key for an operational stop, leaving existing dependency PRs under normal repository review. [Shared delivery](https://github.com/vhco-pro/docs/blob/0c983f6793bfe35eb96ae95ad0c361c6200af44f/knowledge/shared-delivery.md)
+External adopters pin a verified exact release commit and own their scheduler, credentials, billing and concurrency boundary.
+An unreleased exact reviewed SHA can be tested before merge and is labelled as such.
+The committed example starts with `FULL_COMMIT_SHA` and instructions to substitute a verified release SHA/tag.
+The example checker substitutes the reviewed SHA and an unreleased-review comment during component verification.
+After first publication, update the example to the read-back release commit and exact semantic-version comment.
+
+Ordinary PR CI has no App key and uses contents-read permission.
+Calculate the component's candidate version through the pinned shared GitVersion tag action in dry-run mode on its full source history, with refs/releases compared before and after.
+The public caller fixture separately exercises the pinned `vhco-pro/gh-release-workflow` with fixed `dry-run: true` against the fixture's own history.
+That proof verifies the shared workflow interface and its dry-run behavior, without claiming a component release/version from fixture history.
+Its job needs explicit contents-write permission, whose temporary token can modify fixture refs/releases and reaches the pinned job actions.
+The connected-test approval must include that capability.
+Shared workflow outputs are `version`, `tag`, `tagged` and `release-url`.
+Dry-run yields a nonempty calculated `version`, `tagged: 'false'`, empty `tag` and empty `release-url`, with unchanged remote refs/releases.
+The tag action's internal `pushed-tag` is not a shared-workflow output.
+
+The production release caller supports main pushes and an owner dispatch through the pinned shared workflow.
+An unset/false publication-enable variable forces dry-run and prevents tag/release publication on initial implementation merge.
+The release job declares contents-write, including while dry-running, and that capability requires explicit implementation-merge approval.
+The first owner-approved release enables publication and authorizes the initial exact-source publish after merge and checks.
+After enablement, reviewed main merges automatically use GitVersion to publish normal releases.
+An owner can disable publication again without removing PR validation.
+No independent handwritten version counter or permanent per-release manual approval is added.
+Read back the real tag, peeled source and release after first publication, and exercise an external caller at that released SHA under a fresh fixture grant if earlier credentials have been retired.
+Those are post-merge delivery checks and keep issue 1 open until observed.
+AC-07 covers verifiable pre-release preparation and reviewed-reference compatibility, with delivery state reported separately.
+
+The existing [Lab rollout](https://github.com/vhco-pro/lab/issues/3) owns production App/environment settings, the real three-repository allowlist, private local configuration checks, updater handover and observed updates or already-current evidence.
+It consumes the first verified release and proceeds under its own reviewed deployment spec and concrete grants.
+The original component AC-06 remains unticked with that owner-approved scope-transfer tracker.
+A reviewed source revert restores prior central behavior and an external caller can restore its prior immutable pin.
+Keep separate schedule/manual caller files so disabling scheduling leaves an owner-controlled recovery entry point.
+An operational stop disables scheduling and revokes the production key through the Lab procedure, leaving existing dependency PRs under normal review. [Shared delivery](https://github.com/vhco-pro/docs/blob/0c983f6793bfe35eb96ae95ad0c361c6200af44f/knowledge/shared-delivery.md)
 
 ## Acceptance Criteria
 
-- [ ] AC-01: The central public Linux scheduler and checked examples run the pinned official action and Renovate image through the reusable workflow.
+- [ ] AC-01: The central public Linux scheduler configuration and checked examples use the pinned official action and Renovate image through the reusable workflow, with execution verified on owned fixtures.
 - [ ] AC-02: Native environment restrictions protect the App key, and scoped privileged execution reaches only approved targets with automatic merging disabled.
 - [ ] AC-03: Normal and failing private-target runs preserve the selected diagnostic boundary while public target names remain permitted.
 - [ ] AC-04: Real update fixtures produce complete valid dependency changes for supported managers, with synthetic public custom-manager coverage and real Lab verification kept local.
 - [ ] AC-05: Normal multi-target execution obeys native per-repository limits, while token failure, timeout, concurrency and retry have observable outcomes and tested recovery, with working owner notifications and health checks.
 - [ ] AC-06: Every approved pilot has verified updater ownership and processing evidence through a valid dependency PR or an observed already-current result, with its remaining policies preserved.
+      Residual: https://github.com/vhco-pro/lab/issues/3
+      The owner transferred real pilot adoption to the existing Lab rollout on November 17. This component does not claim that adoption has occurred.
 - [ ] AC-07: Shared GitVersion pre-release preparation, local central invocation, reviewed-SHA external-call compatibility and disable/recovery procedures are verified, with real publication tracked separately through delivery.
 
 ## Test Plan
 
 | Criterion | Proof |
 | --- | --- |
-| AC-01 | Locally run actionlint, native configuration validation, example-interface checks and the pinned full-image/container fixture. Confirm bundled tool inventory, non-root temporary-mount writes and manager availability. Connected tests run the central workflow and external example from the approved public caller fixture after reading repository visibility and the standard runner label from job metadata. |
-| AC-02 | Locally reject wrong organizations, unlisted targets, invalid modes and unsupported callers before token creation. In approved connected fixtures, remove the non-main YAML guard and verify environment denial. Read back exact installation/permission scope and token inputs, probe granted/denied API operations and token revocation, then verify direct App main-push denial on the protected public caller fixture and runner after its pilot grant. Verify fixture-key JWT rejection, secret removal and fixture-access removal before the pilot expansion. Synthetic repository commands/scripts must never run. |
+| AC-01 | Locally run actionlint, native configuration validation, example-interface checks and the pinned full-image/container fixture. Confirm bundled tool inventory, non-root temporary-mount writes and manager availability. Static checks compare both real central callers with the reusable-job interface. Connected tests run the exact reviewed reusable workflow and external example from the manual-only public caller fixture after reading repository visibility and the standard runner label from job metadata. |
+| AC-02 | Locally reject wrong organizations, unlisted targets, invalid modes and unsupported callers before token creation. In approved connected fixtures, remove the non-main YAML guard and verify environment denial. Read back exact installation/permission scope and token inputs, probe granted/denied API operations and token revocation, then verify direct App main-push denial on the protected public caller fixture. Revoke its key, observe rejected JWT authentication while the protected secret still exists, then delete the secret and remove fixture access with independent readbacks. Real-runner main denial belongs to Lab. Synthetic repository commands/scripts must never run. |
 | AC-03 | Locally execute the pinned action/container with invented private canaries in manifests, invalid configuration and simulated credential errors. After connected-test approval, repeat using owned private fixtures and inspect actual public logs, summaries and artifact inventory. Assert canaries/contents/credentials absent, target names allowed, preserved exit codes and debug rejection before token generation. |
-| AC-04 | Under connected-test approval, use the private GitHub fixtures for real branch updates of action/image pins, Bun plus bun.lock, Composer plus composer.lock, Go plus go.sum, an OpenTofu provider plus .terraform.lock.hcl and the synthetic custom manager. Validate resulting files with native checkers in the pinned full image. Local tests validate extraction/configuration only. Run actual Lab custom-manager checks locally in Lab with private evidence. |
-| AC-05 | Connected GitHub fixtures prove two targets each receive their ordinary allowance, a third ordinary commit is held within the hourly period, and conflicting target schedules cannot block manual or delayed runs. Cover security/manual exceptions, three overlapping central runs with both queued requests retained, termination after branch creation and PR reuse on retry. Verify that one invalid target fails the aggregate job while another is processed, an uninstalled listed target fails token setup without target changes, and a forced timeout preserves earlier changes and permits a selected later-target retry. Verify owner notification and exercise disabled/stale health checks. |
-| AC-06 | After pilot-access approval, read installation scope and perform full dry-run with before/after refs/issues/PRs. After write approval, verify either a dependency PR with required artifacts and passing applicable checks or a successful already-current run with target-local dashboard evidence. Verify prior updater handover and keep private checks local. |
-| AC-07 | Under the explicit contents-write connected-test grant, run the pinned shared release workflow in fixed dry-run mode in the public caller fixture using reviewed candidate source/history. Assert version calculation, empty pushed-tag/release outputs and unchanged remote refs/releases. Invoke the exact reviewed-SHA external example and verify caller-owned environment, key, billing and concurrency. Check placeholder rendering and honest unreleased comments, disabled-by-default dispatch-only publication, prior-source/pin rollback and recovery. Real tag/release readback and a released-SHA external call are post-merge delivery checks under release approval, keeping issue #1 open until observed. |
+| AC-04 | Under connected-test approval, use the private GitHub fixtures for real branch updates of action/image pins, Bun plus bun.lock, Composer plus composer.lock, Go plus go.sum, an OpenTofu provider plus .terraform.lock.hcl and the synthetic custom manager. Validate resulting files with native checkers in the pinned full image. Local tests validate extraction/configuration only. Actual Lab custom-manager extraction remains a Lab rollout check with private local evidence. |
+| AC-05 | Connected GitHub fixtures prove two targets each receive their ordinary allowance, a third ordinary commit is held within the hourly period, and conflicting target schedules cannot block manual or delayed runs. Cover security/manual exceptions, three overlapping manual caller-fixture runs of the real reusable job with both queued requests retained, termination after branch creation and PR reuse on retry. Verify that one invalid target fails the aggregate job while another is processed, an uninstalled listed target fails token setup without target changes, and a forced timeout preserves earlier changes and permits a selected later-target retry. Verify owner notification and exercise disabled/stale and cancelled-run health checks. |
+| AC-06 | Owner-approved transfer to Lab issue 3. Lab verifies production scope, full dry-run, update PR or successful already-current processing, prior updater handover and private local checks. Preserve this criterion as an unmet transferred obligation rather than claiming fixture proof satisfies real adoption. |
+| AC-07 | Use the pinned tag action to calculate the component version in contents-read dry-run. Under the explicit contents-write fixture grant, run the pinned shared release workflow against the manual caller fixture’s own history with dry-run fixed true. Assert nonempty version, tagged false, empty tag/release-url and unchanged refs/releases. Verify reviewed-SHA external execution, placeholder rendering, disabled initial publication, automatic main release after enablement and disable/revert controls. Real release identity and a released-SHA external invocation remain post-merge delivery checks before issue 1 closes. |
 
 ## Tasks
 
@@ -259,28 +285,7 @@ None yet; written once the document is planned.
 
 ## Open Questions
 
-### Q8: Should real pilot adoption belong to the existing Lab rollout instead of the reusable component's implementation criteria?
-
-**Recommendation:** Keep reusable implementation, owned-fixture verification and release with this component. Move real adoption by the runner, Lab and the OPNsense plugin into the existing Lab rollout, continuing that work after the component is available.
-
-| Option | You get | It costs |
-| --- | --- | --- |
-| **A. Component and Lab rollout split** | Reusable capability can be reviewed and released before deployment-specific grants and adoption | Cross-repository rollout retains its own observed evidence and final review |
-| **B. One feature with staged source merges** | All pilot evidence remains here | Explicit staged merges and post-merge evidence are needed before feature completion |
-
-**Why this is yours:** R-4 F-04 identified live adoption checks that require the implementation to be merged and released first. This changes the ownership of those rollout criteria.
-
-### Q9: Should publishing become automatic after the first approved release is enabled?
-
-**Recommendation:** Once the owner approves the first release and enables publishing, use the shared GitVersion release path on reviewed main merges. Keep initial publication disabled until that grant.
-
-| Option | You get | It costs |
-| --- | --- | --- |
-| **A. Automatic releases after enablement** | Merged dependency changes receive normal versioned releases for consumers | Main merges can publish once the owner enables the release path |
-| **B. Dispatch every release manually** | Each publication receives a separate owner dispatch | Merged dependency updates wait for that dispatch to reach external consumers |
-
-**Why this is yours:** R-4 F-05 identified a steady-state manual step added beyond the shared release convention.
-
+None. The owner selected separate Lab rollout ownership and automatic main releases after first-release approval on November 17.
 
 ## Review Log
 
