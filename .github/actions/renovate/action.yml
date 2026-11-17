@@ -1,0 +1,101 @@
+name: Run selected Renovate targets
+description: Internal helper for the defining Renovate workflow.
+inputs:
+  client-id:
+    description: Selected GitHub App client ID.
+    required: true
+  private-key:
+    description: App key from the caller's protected environment.
+    required: true
+  mode:
+    description: Full dry-run or approved writes.
+    default: full
+  repositories:
+    description: Optional comma-separated subset of the trusted targets.
+    default: ''
+  caller-repository:
+    description: Native caller repository.
+    required: true
+  caller-ref:
+    description: Native caller ref.
+    required: true
+  caller-sha:
+    description: Native caller commit.
+    required: true
+  caller-workflow-ref:
+    description: Native caller workflow ref.
+    required: true
+  caller-event:
+    description: Native caller event.
+    required: true
+  implementation-repository:
+    description: Native defining-workflow repository.
+    required: true
+  implementation-sha:
+    description: Native defining-workflow commit.
+    required: true
+  implementation-workflow:
+    description: Native defining-workflow file path.
+    required: true
+runs:
+  using: composite
+  steps:
+    - name: Set up the verification runtime
+      uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
+      with:
+        bun-version: 1.4.4
+    - name: Validate identity and prepare private storage
+      id: prepare
+      shell: bash
+      env:
+        ACTION_PATH: ${{ github.action_path }}
+        CALLER_REPOSITORY: ${{ inputs.caller-repository }}
+        CALLER_REF: ${{ inputs.caller-ref }}
+        CALLER_SHA: ${{ inputs.caller-sha }}
+        CALLER_WORKFLOW_REF: ${{ inputs.caller-workflow-ref }}
+        CALLER_EVENT: ${{ inputs.caller-event }}
+        IMPLEMENTATION_REPOSITORY: ${{ inputs.implementation-repository }}
+        IMPLEMENTATION_SHA: ${{ inputs.implementation-sha }}
+        IMPLEMENTATION_WORKFLOW: ${{ inputs.implementation-workflow }}
+        SELECTED_REPOSITORIES: ${{ inputs.repositories }}
+        RUN_MODE: ${{ inputs.mode }}
+      run: bun "$ACTION_PATH/scripts/prepare.mjs"
+    - name: Create the selected installation token
+      id: token
+      uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
+      with:
+        client-id: ${{ inputs.client-id }}
+        private-key: ${{ inputs.private-key }}
+        owner: ${{ steps.prepare.outputs.organization }}
+        repositories: ${{ steps.prepare.outputs.repositories }}
+        permission-administration: read
+        permission-vulnerability-alerts: read
+        permission-checks: write
+        permission-statuses: write
+        permission-contents: write
+        permission-issues: write
+        permission-pull-requests: write
+        permission-workflows: write
+        permission-members: read
+        skip-token-revoke: 'false'
+    - name: Run the official Renovate container
+      uses: renovatebot/github-action@acdd6bda8b035c99ce59d5675816af2aa65a1774 # v46.3.14
+      with:
+        token: ${{ steps.token.outputs.token }}
+        configurationFile: ${{ steps.prepare.outputs.config-file }}
+        renovate-image: ghcr.io/renovatebot/renovate:44.251.0-full@sha256:ccc4dc0852667fdbd6b32273d58a247e8b97f7c3a629b1ccd4e4b8712c0b8e2c
+        mount-docker-socket: 'false'
+        docker-user: ${{ steps.prepare.outputs.docker-user }}
+        docker-volumes: ${{ steps.prepare.outputs.private-dir }}:/tmp
+        env-regex: ^(LOG_LEVEL|NO_COLOR)$
+        docker-cmd-file: ${{ github.action_path }}/scripts/renovate-command.sh
+      env:
+        LOG_LEVEL: info
+        NO_COLOR: '1'
+    - name: Remove private working data
+      if: ${{ always() && steps.prepare.outputs.private-dir != '' }}
+      shell: bash
+      env:
+        ACTION_PATH: ${{ github.action_path }}
+        PRIVATE_DIRECTORY: ${{ steps.prepare.outputs.private-dir }}
+      run: bun "$ACTION_PATH/scripts/cleanup.mjs"

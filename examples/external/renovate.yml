@@ -1,0 +1,14 @@
+name: Owned Renovate caller
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  renovate:
+    # Replace FULL_COMMIT_SHA with the reviewed immutable commit for testing,
+    # or the independently verified release commit for released adoption.
+    uses: vhco-pro/renovate-runner/.github/workflows/renovate.yml@FULL_COMMIT_SHA
+    with:
+      client-id: ${{ vars.RENOVATE_APP_CLIENT_ID }}
+      environment: renovate
+      mode: full

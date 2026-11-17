@@ -1,0 +1,71 @@
+name: Selected Renovate targets
+on:
+  workflow_call:
+    inputs:
+      client-id:
+        description: GitHub App client ID belonging to the caller.
+        type: string
+        required: true
+      environment:
+        description: Main-only protected environment holding RENOVATE_APP_PRIVATE_KEY.
+        type: string
+        default: renovate
+      mode:
+        description: Full dry-run or approved writes.
+        type: string
+        default: full
+      repositories:
+        description: Optional comma-separated subset of config/targets.json.
+        type: string
+        default: ''
+permissions:
+  contents: read
+jobs:
+  renovate:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 55
+    environment: ${{ inputs.environment }}
+    concurrency:
+      group: renovate-${{ github.repository_owner }}
+      queue: max
+      cancel-in-progress: false
+    env:
+      ACTIONS_STEP_DEBUG: ${{ secrets.ACTIONS_STEP_DEBUG || vars.ACTIONS_STEP_DEBUG }}
+    steps:
+      - name: Check out caller-owned policy
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: ${{ github.repository }}
+          ref: ${{ github.sha }}
+          path: _vhco-policy
+          persist-credentials: false
+      - name: Check out the defining workflow's source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: ${{ job.workflow_repository }}
+          ref: ${{ job.workflow_sha }}
+          path: _vhco-runner
+          persist-credentials: false
+      - name: Verify both checkout commits
+        shell: bash
+        env:
+          CALLER_SHA: ${{ github.sha }}
+          IMPLEMENTATION_SHA: ${{ job.workflow_sha }}
+        run: |
+          test "$(git -C _vhco-policy rev-parse HEAD)" = "$CALLER_SHA"
+          test "$(git -C _vhco-runner rev-parse HEAD)" = "$IMPLEMENTATION_SHA"
+      - name: Run the defining source's helper
+        uses: ./_vhco-runner/.github/actions/renovate
+        with:
+          client-id: ${{ inputs.client-id }}
+          private-key: ${{ secrets.RENOVATE_APP_PRIVATE_KEY }}
+          mode: ${{ inputs.mode }}
+          repositories: ${{ inputs.repositories }}
+          caller-repository: ${{ github.repository }}
+          caller-ref: ${{ github.ref }}
+          caller-sha: ${{ github.sha }}
+          caller-workflow-ref: ${{ github.workflow_ref }}
+          caller-event: ${{ github.event_name }}
+          implementation-repository: ${{ job.workflow_repository }}
+          implementation-sha: ${{ job.workflow_sha }}
+          implementation-workflow: ${{ job.workflow_file_path }}

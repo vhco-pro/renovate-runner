@@ -1,0 +1,14 @@
+name: Scheduled dependency updates
+on:
+  schedule:
+    - cron: '23 5,17 * * *'
+permissions:
+  contents: read
+jobs:
+  renovate:
+    if: ${{ vars.RENOVATE_ENABLED == 'true' }}
+    uses: ./.github/workflows/renovate.yml
+    with:
+      client-id: ${{ vars.RENOVATE_APP_CLIENT_ID }}
+      environment: renovate
+      mode: write

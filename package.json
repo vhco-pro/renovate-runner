@@ -1,0 +1,9 @@
+{
+  "name": "vhco-renovate-runner",
+  "private": true,
+  "packageManager": "bun@1.4.4",
+  "scripts": {
+    "test": "bun test tests",
+    "check:workflows": "bun scripts/check-workflows.mjs"
+  }
+}

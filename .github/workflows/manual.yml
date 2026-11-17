@@ -1,0 +1,26 @@
+name: Manual dependency updates
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: Full dry-run or approved writes.
+        type: choice
+        default: full
+        options:
+          - full
+          - write
+      repositories:
+        description: Optional comma-separated subset of the trusted targets.
+        type: string
+        default: ''
+permissions:
+  contents: read
+jobs:
+  renovate:
+    if: ${{ inputs.mode == 'full' || vars.RENOVATE_ENABLED == 'true' }}
+    uses: ./.github/workflows/renovate.yml
+    with:
+      client-id: ${{ vars.RENOVATE_APP_CLIENT_ID }}
+      environment: renovate
+      mode: ${{ inputs.mode }}
+      repositories: ${{ inputs.repositories }}
