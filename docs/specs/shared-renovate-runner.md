@@ -435,6 +435,7 @@ None.
 | 2026-11-17 | R-13 | spec | `1caa91cedc21ebfb60ba9e9de22c5b7617f4d4c7` | claude-opus-5-5 | procedural | Three factual should-fix findings; first-party assistant attested, source/Git preserved; reviewer Bash denied. |
 | 2026-11-17 | R-14 | spec | `cca1e9d53ea776d4e70e2126f2b16d27b990723b` | claude-opus-5-5 | procedural | Two factual should-fix findings and one judgement should-fix; first-party Opus assistant attested, source/Git preserved; reviewer Bash denied. |
 | 2026-11-17 | R-15 | spec | `728af36869ffa8afd753182671c62902a5d638ec` | claude-opus-5-5 | procedural | One factual should-fix and one factual nit; first-party Opus assistant attested, source/Git preserved; reviewer Bash denied. |
+| 2026-11-17 | R-16 | spec | `0f04733032f579f54a79d7b37666857f0294e3c9` | claude-opus-5-5 | procedural | NO FINDINGS; first-party Opus assistant attested, source/Git preserved; reviewer Bash denied and runtime checks unexecuted. |
 
 ### R-1
 
@@ -985,6 +986,10 @@ SEVERITY: nit
 WHERE: Open Questions (lines 417 to 419)
 EVIDENCE: Open Questions reads "None. On November 17 the owner selected preserving a failed first tag..." and goes on: "The owner already confirmed source-feature completion... The earlier optional release-tag policy proposal stays withdrawn." The pinned documentation.md line 11 says to keep the "current or intended state, not the conversation that produced it." feature-documents.md says an answered question "is folded into the document and removed". The selections are already folded into Design lines 349 to 355 and the Owner summary, and the withdrawn proposal is history held in the Review Log. Checks run and limitations: as in F-01.
 PROPOSAL: Reduce Open Questions to "None." and rely on the folded Design text and the Review Log for the decision history.
+
+### R-16
+
+NO FINDINGS
 
 ## Sources
 
