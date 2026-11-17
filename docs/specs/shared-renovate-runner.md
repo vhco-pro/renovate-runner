@@ -1,6 +1,6 @@
 ---
 status: draft
-status_description: "R-14 preserved; orphaned-first-tag decision pending before applying this pass’s corrections."
+status_description: "R-14 initial-publication milestone, owner-selected orphan-tag disposition and failure-order tests applied; independent re-review pending."
 issue: https://github.com/vhco-pro/renovate-runner/issues/1
 goal: "A reusable owner-operated GitHub Actions runner produces reviewable dependency updates with verified access, privacy and recovery controls."
 covers:
@@ -40,8 +40,9 @@ GitVersion releases make the reusable workflow available to separately pinned ca
 Publication starts only after the owner approves the first release.
 Its first-publication sequence holds main writes, verifies the approved head and that every existing release run is completed, enables publication and dispatches that candidate.
 The hold lasts through completion and readback.
-A failed first publication disables publication; any retry repeats that sequence with an approved candidate and reconciled immutable tags.
-After that enablement, reviewed main merges publish automatically through the shared release workflow.
+A failed first publication disables publication; any retry repeats that sequence with an approved candidate.
+If its code needs repair, keep any failed tag as an undelivered attempt and publish the approved fix under the next GitVersion version.
+After successful initial tag/release readback, reviewed main merges publish automatically and current-head recovery applies, even while Lab’s external-caller delivery checks remain pending.
 The owner confirmed source-feature completion at its tested integration, with actual release readback and released-SHA consumption recorded in Lab before production access.
 A later connected fixture session uses a separate fixture-only App after the production App has real-repository access.
 
@@ -65,7 +66,7 @@ Acceptance authorizes implementation, isolated local tests and ordinary read-onl
 The fixture release dry-run and merged main release job each need a contents-write token, which can modify refs/releases and reaches their pinned actions.
 The fixture grant and implementation merge approval must explicitly cover those permissions.
 Publication waits for checks on that exact commit, and workflow-level concurrency serializes release runs.
-A main change detected before the publisher runs fails that attempt with an owner notification and current-head release-dispatch recovery.
+After initial tag/release readback, a main change detected before the publisher runs fails that attempt with an owner notification and current-head release-dispatch recovery.
 That recovery covers a newer skip-CI documentation commit arriving while an earlier release run is already active.
 Code-bearing deliveries follow the shared whole-delivery CI-marker rule, including their final metadata commit.
 Connected fixture tests require their own concrete App/test-resource approval.
@@ -297,7 +298,7 @@ Whenever effective dry-run is true, ignore `expected-sha`, including missing, ma
 Enabled automatic main pushes use their native run SHA and require no dispatch input.
 Before invoking the publisher, compare a publishing dispatch’s run commit with its supplied expected SHA and fail on a missing, malformed or mismatched value.
 The first publish copies the candidate SHA named in its owner approval into that input.
-After the first release is verified, later manual recovery copies the intended current reviewed main SHA; enabled automatic main pushes use their native run SHA under the existing automatic-release policy.
+After successful initial publication readback, later manual recovery copies the intended current reviewed main SHA; enabled automatic main pushes use their native run SHA under the existing automatic-release policy.
 A failed first publication instead follows the first-publication recovery sequence below.
 Effective dry-run is true whenever publication is disabled, or when an owner dispatch leaves `dry-run` true; enabled main pushes publish.
 The first approved publish and later recovery use `gh workflow run release.yml --ref main -f dry-run=false -f expected-sha="$RELEASE_SHA"` after enablement, and wait for that exact run’s checks/publication.
@@ -308,8 +309,11 @@ Set workflow-level concurrency on the main/manual release caller using one repos
 The group covers tests, source preflight and the shared release job.
 After tests and before invoking the shared publisher, read the current main head and compare it with the run’s exact source commit.
 If the main head changed, fail with an explicit source-moved result before tag/release mutation and notify the owner.
-After first-release delivery verification, recover through the release workflow’s current-main dispatch with `dry-run=false` and its matching `expected-sha` after publication is enabled and checks pass, including when the intervening commit was skip-CI documentation and started no new run.
-Before that verification, use the first-publication recovery sequence below.
+After successful initial publication readback, recover through the release workflow’s current-main dispatch with `dry-run=false` and its matching `expected-sha` after publication is enabled and checks pass, including when the intervening commit was skip-CI documentation and started no new run.
+Before that initial publication readback, use the first-publication recovery sequence below.
+Initial publication readback means the exact tag peels to the approved candidate and its corresponding public release exists, with the successful run’s source matching that candidate.
+It ends first-publication recovery and the main hold.
+Lab’s later released-SHA external-caller and fixture-retirement checks remain separate delivery prerequisites; they do not block current-head release recovery.
 Release runs remain serialized even if GitHub starts queued requests out of source order.
 A newer head makes an older attempt fail whether that newer head is unpublished, failed or documentation-only.
 This serializes ref/release writes while retaining queued requests within GitHub’s native capacity.
@@ -321,7 +325,8 @@ The generic published-component readback checklist and post-merge ordering seque
 Lab supplies concrete deployment values and executes the real comparisons, with its maintained VitePress guide recording the deployment-specific procedure.
 First-release delivery verification applies the source-identity rule above: exact tag/run/caller commit equality, review-to-integration-to-release ancestry and unchanged covered contents from the implementation review.
 A mismatch keeps issue 1 open and Lab inactive.
-Keep exact tags stable and recover through the shared standard’s current-head dispatch/reviewed repair path.
+Keep exact tags stable.
+Before initial publication readback, use the first-publication recovery sequence; afterward use the shared standard’s current-head dispatch/reviewed repair path, including while Lab delivery verification is pending.
 Repository variable `RELEASE_ENABLED` defaults to unset/false, which forces dry-run and prevents tag/release publication on initial implementation merge.
 The release job declares contents-write, including while dry-running, and that capability requires explicit implementation-merge approval.
 The first owner-approved release authorizes the candidate publish after merge, required checks and the documented release-source identity comparison.
@@ -332,14 +337,22 @@ Any non-completed status holds enablement, including `requested`, `waiting`, `pe
 Incomplete or failed run-list reads hold enablement.
 Set `RELEASE_ENABLED=true`, then dispatch the approved candidate with `dry-run=false` and its `expected-sha`, recording that exact run ID.
 Keep the main quiet period through the candidate’s completion and initial release readback.
-A first tag from a different route or candidate is a delivery mismatch that keeps Lab inactive and issue 1 open for reconciliation.
+An unexpected tag from a different route or candidate holds initial publication until its exact source and disposition are recorded.
+An owner-approved abandoned-attempt disposition for a superseded failed candidate follows the recovery path below.
+Lab remains inactive and issue 1 stays open until a later approved release passes delivery verification.
 If the first candidate fails, set `RELEASE_ENABLED=false`, retain the main hold and wait for that attempt to complete before reading its result, tag and release state.
 A retry repeats the full first-publication sequence, including the main hold before head/run-list verification and enablement, using the approved candidate and source-identity mapping.
 A tag left without a release may be completed through the same shared publisher only when it peels to that approved candidate and the held current main is still that commit.
 Never move or delete the tag as recovery.
 If a source repair is needed, verify publication is disabled before lifting the main hold for its normal reviewed change.
 The changed candidate needs first-release approval with its refreshed source-identity mapping before retry.
-A leftover tag for a different candidate is a delivery mismatch requiring reconciliation before another first-publication attempt; keep Lab inactive and issue 1 open.
+When a failed candidate’s tag exists without a delivered release and a reviewed source repair supersedes it, preserve that exact tag as an abandoned, undelivered attempt.
+Record its tag, peeled source, failed run and disposition in the Lab delivery record and component issue 1.
+Do not publish the superseded candidate merely to finish that tag.
+The next first-release approval names the repaired candidate/source-identity mapping and the retained abandoned tag.
+Use the next version calculated by shared GitVersion from the preserved history; do not reuse the abandoned tag or hand-set the version.
+The repaired candidate’s successful initial publication readback becomes the first delivered release for the remaining Lab verification.
+That recorded abandoned tag no longer blocks delivery, while an unexplained or conflicting tag still holds reconciliation.
 After successful candidate publication/readback, end the main quiet period and leave publication enabled for normal reviewed main merges.
 After enablement, reviewed main merges automatically use GitVersion to publish normal releases.
 An owner can disable publication again without removing PR validation.
@@ -393,7 +406,7 @@ An operational stop disables scheduling and revokes the production key through t
 | AC-04 | Under connected-test approval, use the private GitHub fixtures for real branch updates of action/image pins, Bun plus bun.lock, Composer plus composer.lock, Go plus go.sum, an OpenTofu provider plus .terraform.lock.hcl and the synthetic custom manager. Validate resulting files with native checkers in the pinned full image. Local tests validate extraction/configuration only. Actual Lab custom-manager extraction remains a Lab rollout check with private local evidence. |
 | AC-05 | Connected GitHub fixtures prove two targets each receive their ordinary allowance, a third ordinary commit is held within the hourly period, and conflicting target schedules cannot block manual or delayed runs. Cover security/manual exceptions, three overlapping manual caller-fixture runs of the real reusable job with both queued requests retained, termination after branch creation and PR reuse on retry. Verify that one invalid target fails the aggregate job while another is processed, an uninstalled listed target fails token setup without target changes, and a forced timeout preserves earlier changes and permits a selected later-target retry. Verify owner notification and exercise disabled/stale and cancelled-run health checks. |
 | AC-06 | Owner-approved transfer to Lab issue 3. Lab verifies production scope, full dry-run, update PR or successful already-current processing, prior updater handover and private local checks. Preserve this criterion as an unmet transferred obligation rather than claiming fixture proof satisfies real adoption. |
-| AC-07 | Calculate the component version through the pinned tag action in contents-read dry-run. Under the explicit contents-write fixture grant, run the pinned shared workflow on the caller fixture’s own history with dry-run fixed true, checking nonempty version, tagged false, empty tag/release-url and unchanged refs/releases. Verify native source binding, the fixed sibling checkout paths/order, pre-local-action HEAD check and github.action_path script use; reject malformed identity before token creation. Local controlled main-head reads and a stub publisher test current-A eligibility and failure before publisher invocation when superseded by unpublished B, failed B, published B or skip-CI documentation D. For a current run A, prove a publishing dispatch with approved expected SHA B, missing SHA or malformed SHA cannot invoke the stub publisher, and matching approved A can. Execute positive preflight cases: enabled automatic main push with no dispatch inputs reaches the publishing stub, enabled dry-run dispatch with empty/malformed/mismatched expected-sha reaches only the non-publishing path, and disabled publication with dispatch dry-run=false and no SHA remains non-publishing. Verify the failed-job notification and release.yml current-main dispatch with dry-run=false and expected-sha. Check the native boolean default and enabled main/manual input mapping. Static workflow checks cover tests-first dependencies, workflow-level queue settings, initial dry-run and enabled-main wiring. Connected release dry-run proves the pinned interface; release-caller queue wiring is a static check. Run tests/operations.test.mjs against covered docs/operations.md for generic health commands, the exact tag/run/caller SHA and review/integration/release ancestry-plus-covered-content identity rule, generic placeholder commands with actual results assigned to Lab/VitePress, existing-tag treatment, first-enablement ordering (hold main, verify approved head and all existing run statuses completed, enable, dispatch, retain hold through readback), and failed-first-attempt recovery. Reject fixtures that check before the hold or after enablement; reject each non-completed/unknown run status and incomplete run-list reads. Verify retry repeats that sequence, failed-candidate tag completion requires the same approved current-main SHA, and a changed candidate or conflicting leftover tag holds for approval/reconciliation, and post-release fixture retirement ordering; actual tag/source comparison is executed and recorded by Lab after first-publication approval. Exercise disable/revert controls. |
+| AC-07 | Calculate the component version through the pinned tag action in contents-read dry-run. Under the explicit contents-write fixture grant, run the pinned shared workflow on the caller fixture’s own history with dry-run fixed true, checking nonempty version, tagged false, empty tag/release-url and unchanged refs/releases. Verify native source binding, the fixed sibling checkout paths/order, pre-local-action HEAD check and github.action_path script use; reject malformed identity before token creation. Local controlled main-head reads and a stub publisher test current-A eligibility and failure before publisher invocation when superseded by unpublished B, failed B, published B or skip-CI documentation D. For a current run A, prove a publishing dispatch with approved expected SHA B, missing SHA or malformed SHA cannot invoke the stub publisher, and matching approved A can. Execute positive preflight cases: enabled automatic main push with no dispatch inputs reaches the publishing stub, enabled dry-run dispatch with empty/malformed/mismatched expected-sha reaches only the non-publishing path, and disabled publication with dispatch dry-run=false and no SHA remains non-publishing. Verify the failed-job notification and release.yml current-main dispatch with dry-run=false and expected-sha. Check the native boolean default and enabled main/manual input mapping. Static workflow checks cover tests-first dependencies, workflow-level queue settings, initial dry-run and enabled-main wiring. Connected release dry-run proves the pinned interface; release-caller queue wiring is a static check. Run tests/operations.test.mjs against covered docs/operations.md for generic health commands, the exact tag/run/caller SHA and review/integration/release ancestry-plus-covered-content identity rule, generic placeholder commands with actual results assigned to Lab/VitePress, existing-tag treatment, first-enablement ordering (hold main, verify approved head and all existing run statuses completed, enable, dispatch, retain hold through readback), and failed-first-attempt recovery. Reject fixtures that check before the hold or after enablement; reject each non-completed/unknown run status and incomplete run-list reads. Verify failure handling disables publication and keeps the main hold until the failed run completes before reading its final result/tag/release state. Reject fixtures that read before completion or lift the hold for a repair before verifying publication is disabled. Verify retry repeats the first sequence and same-candidate tag completion requires the approved current-main SHA. Exercise the owner-selected orphan path: preserve the superseded tag as undelivered, record its exact identity/failure/disposition, approve the repaired candidate and let shared GitVersion calculate its next tag without publishing the failed candidate. Reject tag movement/deletion/reuse and unexplained conflicting tags. Verify the switch to ordinary current-head recovery occurs at successful initial tag/release readback, including the window before Lab external-caller/fixture-retirement verification; verify post-release fixture retirement ordering; actual tag/source comparison is executed and recorded by Lab after first-publication approval. Exercise disable/revert controls. |
 
 ## Tasks
 
@@ -401,16 +414,7 @@ None yet; written once the document is planned.
 
 ## Open Questions
 
-### Q10: How should an orphaned tag from a superseded first-release candidate be reconciled?
-
-**Recommendation:** A. Preserve it as an undelivered attempt and release the approved repair under its next GitVersion tag.
-
-| Option | You get | It costs |
-| --- | --- | --- |
-| **A. Retain the failed tag without delivering it** | Immutable history and a first verified release from the approved repaired candidate. | An unused version tag remains, with its abandoned-attempt disposition in the delivery record. |
-| **B. Finish the old release, then publish the repair** | A completed release for the original tag followed by a linked corrective release. | Publishes the superseded candidate before delivering its repair. |
-
-**Why this is yours:** It decides which candidate is publicly delivered after partial first-publication failure. Both preserve existing tags. No tag, release or live setting change is authorized by this draft.
+None. On November 17 the owner selected preserving a failed first tag as an undelivered attempt and releasing the reviewed repair under the next shared GitVersion version.
 
 The owner already confirmed source-feature completion followed by Lab delivery verification and the shared release standard. The earlier optional release-tag policy proposal stays withdrawn.
 
