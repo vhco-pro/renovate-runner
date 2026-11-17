@@ -1,0 +1,52 @@
+name: Release runner
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      dry-run:
+        description: Calculate the version and notes without publication.
+        type: boolean
+        default: true
+      expected-sha:
+        description: Approved exact current-main commit for a publishing dispatch.
+        type: string
+        default: ''
+permissions:
+  contents: read
+concurrency:
+  group: release-${{ github.repository }}
+  queue: max
+  cancel-in-progress: false
+jobs:
+  checks:
+    uses: ./.github/workflows/ci.yml
+  preflight:
+    needs: [checks]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    outputs:
+      dry-run: ${{ steps.source.outputs.dry-run }}
+    steps:
+      - name: Check out the run's source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Set up Bun from packageManager
+        uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
+      - name: Verify current main and publishing mode
+        id: source
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          RELEASE_ENABLED: ${{ vars.RELEASE_ENABLED }}
+          RELEASE_DRY_RUN: ${{ inputs.dry-run }}
+          RELEASE_EXPECTED_SHA: ${{ inputs.expected-sha }}
+        run: bun .github/actions/renovate/scripts/release-preflight.mjs
+  publish:
+    needs: [checks, preflight]
+    permissions:
+      contents: write
+    uses: vhco-pro/gh-release-workflow/.github/workflows/gh-release.yml@b18de6d2f305f971afe01ba31e17bde5966b1567 # shared release
+    with:
+      runs-on: ubuntu-24.04
+      dry-run: ${{ needs.preflight.outputs.dry-run != 'false' }}
