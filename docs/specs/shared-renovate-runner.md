@@ -1,6 +1,6 @@
 ---
-status: draft
-status_description: "R-16 independently returned NO FINDINGS; owner acceptance pending before implementation."
+status: planned
+status_description: "Owner accepted R-16; implementation task planning is next. App grants, merge, release and activation retain their separate approvals."
 issue: https://github.com/vhco-pro/renovate-runner/issues/1
 goal: "A reusable owner-operated GitHub Actions runner produces reviewable dependency updates with verified access, privacy and recovery controls."
 covers:
@@ -436,6 +436,7 @@ None.
 | 2026-11-17 | R-14 | spec | `cca1e9d53ea776d4e70e2126f2b16d27b990723b` | claude-opus-5-5 | procedural | Two factual should-fix findings and one judgement should-fix; first-party Opus assistant attested, source/Git preserved; reviewer Bash denied. |
 | 2026-11-17 | R-15 | spec | `728af36869ffa8afd753182671c62902a5d638ec` | claude-opus-5-5 | procedural | One factual should-fix and one factual nit; first-party Opus assistant attested, source/Git preserved; reviewer Bash denied. |
 | 2026-11-17 | R-16 | spec | `0f04733032f579f54a79d7b37666857f0294e3c9` | claude-opus-5-5 | procedural | NO FINDINGS; first-party Opus assistant attested, source/Git preserved; reviewer Bash denied and runtime checks unexecuted. |
+| 2026-11-17 | R-16 | spec | `0f04733032f579f54a79d7b37666857f0294e3c9` | n/a | n/a | accepted by owner |
 
 ### R-1
 
