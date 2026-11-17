@@ -1,6 +1,6 @@
 ---
 status: draft
-status_description: "R-3 factual corrections applied; independent re-review and acceptance pending."
+status_description: "R-4 retained; component/rollout split and steady-state release policy await owner answers."
 issue: https://github.com/vhco-pro/renovate-runner/issues/1
 goal: "VHCO repositories receive reviewable dependency updates through an owner-operated GitHub Actions runner."
 covers:
@@ -259,7 +259,28 @@ None yet; written once the document is planned.
 
 ## Open Questions
 
-None.
+### Q8: Should real pilot adoption belong to the existing Lab rollout instead of the reusable component's implementation criteria?
+
+**Recommendation:** Keep reusable implementation, owned-fixture verification and release with this component. Move real adoption by the runner, Lab and the OPNsense plugin into the existing Lab rollout, continuing that work after the component is available.
+
+| Option | You get | It costs |
+| --- | --- | --- |
+| **A. Component and Lab rollout split** | Reusable capability can be reviewed and released before deployment-specific grants and adoption | Cross-repository rollout retains its own observed evidence and final review |
+| **B. One feature with staged source merges** | All pilot evidence remains here | Explicit staged merges and post-merge evidence are needed before feature completion |
+
+**Why this is yours:** R-4 F-04 identified live adoption checks that require the implementation to be merged and released first. This changes the ownership of those rollout criteria.
+
+### Q9: Should publishing become automatic after the first approved release is enabled?
+
+**Recommendation:** Once the owner approves the first release and enables publishing, use the shared GitVersion release path on reviewed main merges. Keep initial publication disabled until that grant.
+
+| Option | You get | It costs |
+| --- | --- | --- |
+| **A. Automatic releases after enablement** | Merged dependency changes receive normal versioned releases for consumers | Main merges can publish once the owner enables the release path |
+| **B. Dispatch every release manually** | Each publication receives a separate owner dispatch | Merged dependency updates wait for that dispatch to reach external consumers |
+
+**Why this is yours:** R-4 F-05 identified a steady-state manual step added beyond the shared release convention.
+
 
 ## Review Log
 
