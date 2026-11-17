@@ -1,5 +1,5 @@
 # VHCO Renovate runner
 
-A shared Renovate workflow for owner-operated dependency updates on GitHub Actions.
+A reusable GitHub Actions workflow for owner-operated Renovate dependency updates.
 
-The initial design is being drafted in `docs/specs/shared-renovate-runner.md`.
+The [initial design](docs/specs/shared-renovate-runner.md) is a draft awaiting owner choices and independent review.
