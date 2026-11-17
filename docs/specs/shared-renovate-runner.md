@@ -1,6 +1,6 @@
 ---
 status: draft
-status_description: "R-10 source-identity and delivery-test corrections applied; runtime work uses the standard local composite-action pattern, independent re-review pending."
+status_description: "R-11 checkout isolation, delivery-record ownership and approved-candidate preflight binding applied; independent re-review pending."
 issue: https://github.com/vhco-pro/renovate-runner/issues/1
 goal: "A reusable owner-operated GitHub Actions runner produces reviewable dependency updates with verified access, privacy and recovery controls."
 covers:
@@ -113,14 +113,17 @@ Lab adoption additionally requires target-specific evidence of actual processing
 Trusted organization configuration under `config/` supplies selected rate/merge controls and the active allowlist installed from reviewed deployment inputs.
 The connected caller fixture supplies its own synthetic allowlist as caller-owned trusted configuration through the same validated interface.
 The reusable workflow orchestrates native checkout and action calls.
-Check out its implementation using `job.workflow_repository` and `job.workflow_sha` at fixed path `_vhco-runner`.
-Invoke `./_vhco-runner/.github/actions/renovate` through a literal local `uses` path.
+First check out caller-owned trusted policy from `github.repository` at `github.sha` into fixed workspace path `_vhco-policy`.
+Then check out the implementation using `job.workflow_repository` and `job.workflow_sha` into sibling path `_vhco-runner`.
+Both checkouts use their explicit paths and `persist-credentials: false`.
+After both checkouts, one inline step compares each checkout HEAD with its expected native SHA.
+The implementation HEAD comparison runs immediately before the literal `uses: ./_vhco-runner/.github/actions/renovate` step, with no intervening checkout or caller code execution.
 That internal composite action owns runtime scripts under `.github/actions/renovate/scripts/`, invokes them through `github.action_path` and composes the pinned official App-token and Renovate actions.
 Pass expected repository, workflow path and commit from native job context to the action; its first checks validate those fields and matching implementation HEAD before token creation.
 The local helper has the defining workflow’s checkout identity and no separate version/pin or public action API.
 This follows the pinned workflow/action boundary and GitHub’s local-composite mechanism.
 Root `scripts/` holds only local verification and non-reusable entry-point tooling as needed.
-Load caller-owned trusted policy from a separate checkout of `github.repository` at `github.sha`, with a verified matching HEAD.
+Read the trusted policy only from the verified `_vhco-policy` sibling checkout.
 Validate organization and target selection before token creation.
 Target repository files cannot widen that selection.
 The scheduler owns the twice-daily UTC cron, away from the start of the hour.
@@ -259,7 +262,9 @@ The integration commit must descend from the implementation-review commit, and t
 Compare the review and release commits over the paths in this feature’s `covers`; their tracked contents must be identical.
 Completion metadata, merge ancestry and other uncovered documentation may give those commits different identities.
 A covered-path difference requires the appropriate fresh review before treating the release as that reviewed implementation.
-The first-release approval identifies this verified candidate/review/integration mapping, and the native operations guide records the comparison commands and results.
+The first-release approval identifies the verified candidate/review/integration mapping.
+Generic `docs/operations.md` contains the comparison commands with placeholders.
+Lab’s task history and its maintained VitePress operating record retain the actual mapping, executed commands and results.
 
 The source workflow repository is the release artifact.
 The central caller uses its local workflow from the same commit.
@@ -282,15 +287,21 @@ The tag action's internal `pushed-tag` is not a shared-workflow output.
 
 The production release caller is `.github/workflows/release.yml`, supporting main pushes and owner `workflow_dispatch` through the pinned shared workflow.
 Its boolean `dry-run` input defaults to true, following the shared example.
+Add an optional string dispatch input `expected-sha`, defaulting to empty.
+A manual dispatch that will publish requires a full lowercase 40-character SHA in that input; dry-run dispatches may omit it.
+Before invoking the publisher, compare a publishing dispatch’s run commit with its supplied expected SHA and fail on a missing, malformed or mismatched value.
+The first publish copies the candidate SHA named in its owner approval into that input.
+Later manual recovery copies the intended current reviewed main SHA; enabled automatic main pushes use their native run SHA under the existing automatic-release policy.
 Effective dry-run is true whenever publication is disabled, or when an owner dispatch leaves `dry-run` true; enabled main pushes publish.
-The first approved publish and later recovery use `gh workflow run release.yml --ref main -f dry-run=false` after enablement, and wait for that exact run’s checks/publication.
+The first approved publish and later recovery use `gh workflow run release.yml --ref main -f dry-run=false -f expected-sha="$RELEASE_SHA"` after enablement, and wait for that exact run’s checks/publication.
+`RELEASE_SHA` is the approved candidate for first publication and the intended current reviewed main commit for later recovery.
 The separate Renovate `manual.yml` controls dependency runs.
 Its release job depends on successful required tests for that exact commit.
 Set workflow-level concurrency on the main/manual release caller using one repository-wide native group, `release-${{ github.repository }}`, with `queue: max` and `cancel-in-progress: false`, independent of the Renovate-run group.
 The group covers tests, source preflight and the shared release job.
 After tests and before invoking the shared publisher, read the current main head and compare it with the run’s exact source commit.
 If the main head changed, fail with an explicit source-moved result before tag/release mutation and notify the owner.
-Recover through the release workflow’s current-main dispatch with `dry-run=false` after publication is enabled and checks pass, including when the intervening commit was skip-CI documentation and started no new run.
+Recover through the release workflow’s current-main dispatch with `dry-run=false` and its matching `expected-sha` after publication is enabled and checks pass, including when the intervening commit was skip-CI documentation and started no new run.
 Release runs remain serialized even if GitHub starts queued requests out of source order.
 A newer head makes an older attempt fail whether that newer head is unpublished, failed or documentation-only.
 This serializes ref/release writes while retaining queued requests within GitHub’s native capacity.
@@ -352,13 +363,13 @@ An operational stop disables scheduling and revokes the production key through t
 
 | Criterion | Proof |
 | --- | --- |
-| AC-01 | Locally run actionlint, native configuration validation, example-interface checks and the pinned full-image/container fixture. Confirm bundled tool inventory, non-root temporary-mount writes and manager availability. Static checks compare both real central callers with the reusable-job interface. Check that the reusable workflow orchestrates actions and its internal helper owns runtime scripts. Connected tests run the exact reviewed reusable workflow and external example from the manual-only public caller fixture after reading repository visibility and the standard runner label from job metadata. |
+| AC-01 | Locally run actionlint, native configuration validation, example-interface checks and the pinned full-image/container fixture. Confirm bundled tool inventory, non-root temporary-mount writes and manager availability. Static checks compare both real central callers with the reusable-job interface. Check that the reusable workflow orchestrates actions and its internal helper owns runtime scripts. Assert caller policy checkout precedes implementation checkout at fixed sibling paths, both disable credential persistence, and the native-SHA HEAD comparison immediately precedes the local action step. Connected tests run the exact reviewed reusable workflow and external example from the manual-only public caller fixture after reading repository visibility and the standard runner label from job metadata. |
 | AC-02 | Locally reject wrong organizations, unlisted targets, invalid modes and unsupported callers before token creation. In approved connected fixtures, remove the non-main YAML guard and verify environment denial. Read back exact installation/permission scope and token inputs, probe granted/denied API operations and token revocation, then verify direct App main-push denial on the protected public caller fixture. Generate the native-required replacement key, discard its protected temporary PEM and record fingerprint/removal. Revoke the active key, observe rejected JWT authentication while its protected secret still exists, then delete the secret and remove fixture access with independent readbacks. Real-runner main denial belongs to Lab. Use tests/operations.test.mjs to statically verify the covered docs/operations.md post-merge sequence assigns release-readback, released-SHA consumption and final fixture-key retirement to Lab before real grants; Lab observes that ordering at delivery. Later fixtures require their own fixture-only App. Synthetic repository commands/scripts must never run. |
 | AC-03 | Locally execute the pinned action/container with invented private canaries in manifests, invalid configuration and simulated credential errors. After connected-test approval, repeat using owned private fixtures and inspect actual public logs, summaries and artifact inventory. Assert canaries/contents/credentials absent, target names allowed, preserved exit codes and debug rejection before token generation. |
 | AC-04 | Under connected-test approval, use the private GitHub fixtures for real branch updates of action/image pins, Bun plus bun.lock, Composer plus composer.lock, Go plus go.sum, an OpenTofu provider plus .terraform.lock.hcl and the synthetic custom manager. Validate resulting files with native checkers in the pinned full image. Local tests validate extraction/configuration only. Actual Lab custom-manager extraction remains a Lab rollout check with private local evidence. |
 | AC-05 | Connected GitHub fixtures prove two targets each receive their ordinary allowance, a third ordinary commit is held within the hourly period, and conflicting target schedules cannot block manual or delayed runs. Cover security/manual exceptions, three overlapping manual caller-fixture runs of the real reusable job with both queued requests retained, termination after branch creation and PR reuse on retry. Verify that one invalid target fails the aggregate job while another is processed, an uninstalled listed target fails token setup without target changes, and a forced timeout preserves earlier changes and permits a selected later-target retry. Verify owner notification and exercise disabled/stale and cancelled-run health checks. |
 | AC-06 | Owner-approved transfer to Lab issue 3. Lab verifies production scope, full dry-run, update PR or successful already-current processing, prior updater handover and private local checks. Preserve this criterion as an unmet transferred obligation rather than claiming fixture proof satisfies real adoption. |
-| AC-07 | Calculate the component version through the pinned tag action in contents-read dry-run. Under the explicit contents-write fixture grant, run the pinned shared workflow on the caller fixture’s own history with dry-run fixed true, checking nonempty version, tagged false, empty tag/release-url and unchanged refs/releases. Verify native source binding, the local composite-action path and github.action_path script use; reject malformed identity before token creation. Local controlled main-head reads and a stub publisher test current-A eligibility and failure before publisher invocation when superseded by unpublished B, failed B, published B or skip-CI documentation D. Verify the failed-job notification and release.yml current-main dispatch with dry-run=false; assert disabled publication still forces dry-run. Check the native boolean default and enabled main/manual input mapping. Static workflow checks cover tests-first dependencies, workflow-level queue settings, initial dry-run and enabled-main wiring. Connected release dry-run proves the pinned interface; release-caller queue wiring is a static check. Run tests/operations.test.mjs against covered docs/operations.md for generic health commands, the exact tag/run/caller SHA and review/integration/release ancestry-plus-covered-content identity rule, existing-tag treatment and post-release fixture retirement ordering; actual tag/source comparison is executed and recorded by Lab after first-publication approval. Exercise disable/revert controls. |
+| AC-07 | Calculate the component version through the pinned tag action in contents-read dry-run. Under the explicit contents-write fixture grant, run the pinned shared workflow on the caller fixture’s own history with dry-run fixed true, checking nonempty version, tagged false, empty tag/release-url and unchanged refs/releases. Verify native source binding, the fixed sibling checkout paths/order, pre-local-action HEAD check and github.action_path script use; reject malformed identity before token creation. Local controlled main-head reads and a stub publisher test current-A eligibility and failure before publisher invocation when superseded by unpublished B, failed B, published B or skip-CI documentation D. For a current run A, prove a publishing dispatch with approved expected SHA B, missing SHA or malformed SHA cannot invoke the stub publisher, and matching approved A can. Verify the failed-job notification and release.yml current-main dispatch with dry-run=false and expected-sha; assert disabled publication still forces dry-run. Check the native boolean default and enabled main/manual input mapping. Static workflow checks cover tests-first dependencies, workflow-level queue settings, initial dry-run and enabled-main wiring. Connected release dry-run proves the pinned interface; release-caller queue wiring is a static check. Run tests/operations.test.mjs against covered docs/operations.md for generic health commands, the exact tag/run/caller SHA and review/integration/release ancestry-plus-covered-content identity rule, generic placeholder commands with actual results assigned to Lab/VitePress, existing-tag treatment and post-release fixture retirement ordering; actual tag/source comparison is executed and recorded by Lab after first-publication approval. Exercise disable/revert controls. |
 
 ## Tasks
 
