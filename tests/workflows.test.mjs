@@ -31,6 +31,9 @@ describe('central callers', () => {
       expect(caller.jobs.renovate.uses).toBe('./.github/workflows/renovate.yml');
       expect(caller.jobs.renovate.with.environment).toBe('renovate');
       expect(caller.jobs.renovate.with['client-id']).toBe('${{ vars.RENOVATE_APP_CLIENT_ID }}');
+      expect(caller.jobs.renovate.secrets).toEqual({
+        RENOVATE_APP_PRIVATE_KEY: '${{ secrets.RENOVATE_APP_PRIVATE_KEY }}',
+      });
     }
     expect(scheduled.jobs.renovate.if).toBe("${{ vars.RENOVATE_ENABLED == 'true' }}");
     expect(scheduled.jobs.renovate.with.mode).toBe('write');
@@ -56,6 +59,15 @@ test('the generic external example matches the reusable workflow interface', () 
     if (input.required) expect(caller.with).toHaveProperty(name);
   }
   expect(caller.with.mode).toBe('full');
+  expect(caller.secrets).toEqual({
+    RENOVATE_APP_PRIVATE_KEY: '${{ secrets.RENOVATE_APP_PRIVATE_KEY }}',
+  });
+  expect(workflow.on.workflow_call.secrets).toEqual({
+    RENOVATE_APP_PRIVATE_KEY: {
+      description: 'App key supplied by the main-only environment.',
+      required: true,
+    },
+  });
   const policy = JSON.parse(readFileSync(new URL('../examples/external/config/targets.json', import.meta.url), 'utf8'));
   expect(policy).toEqual({ organization: 'example-org', repositories: ['example-org/example-repository'] });
 });

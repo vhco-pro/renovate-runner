@@ -1,6 +1,10 @@
 name: Selected Renovate targets
 on:
   workflow_call:
+    secrets:
+      RENOVATE_APP_PRIVATE_KEY:
+        description: App key supplied by the main-only environment.
+        required: true
     inputs:
       client-id:
         description: GitHub App client ID belonging to the caller.

@@ -1,0 +1,23 @@
+MODEL: claude-opus-5-5
+TARGET: /tmp/vhco-opus-spec-NNQrm9/clone @ 2ee85207a93144ce8c15b5a69f860ebd2e9ecfb7, record docs/internal/maintenance/forward-environment-secret.md, task base 7d2b7ef8d2a2edd67763f5ba7d0c9fedf828cd1e, engineering docs 0c983f6793bfe35eb96ae95ad0c361c6200af44f
+
+NO FINDINGS
+
+**What I checked**
+- There is one commit between the task base and the target. The diff only touches the six affected paths listed in the record, plus the record itself. No container or runtime code changed.
+- `.github/workflows/renovate.yml` now declares `RENOVATE_APP_PRIVATE_KEY` under `workflow_call.secrets` with `required: true`. It is still used only as `private-key` for the helper. The job still runs in `environment: ${{ inputs.environment }}` (default `renovate`), so the main-only environment boundary is unchanged.
+- `manual.yml`, `schedule.yml` and `examples/external/renovate.yml` each pass exactly that one secret by name. None of them uses `secrets: inherit`, and none adds a repository or organisation secret. Their existing `if` gates, `environment: renovate` and `client-id` are unchanged.
+- The new tests require the callers' `secrets` map to equal exactly that one mapping, and they also check the `workflow_call` secret declaration. At the task base, neither the callers nor the example had a `secrets` key. The two changed tests (central callers and external example) would therefore fail there, which matches the record's description of the regression.
+- The `docs/operations.md` addition matches the repair.
+
+**Checks I ran**
+- Fast suite, through the helper (`bun /tmp/vhco-review-support/check.mjs … fast`, Bun 1.4.4, isolated TMPDIR): 80 pass, 0 fail, 280 assertions, 6 files. This matches the record.
+- Workflow lint (`… workflow`): actionlint finished with no errors and a zero exit.
+- `git diff --check 7d2b7ef HEAD`: clean.
+
+**What I could not check**
+- **The failing test at the task base:** I tried to run the new test against an extracted copy of the base in scratch, but the host denied the command. My conclusion that it would fail comes from reading the code, not from a run.
+- **The author evidence:** the retained log `/tmp/vhco-renovate-smoke-dry.log` and the docs copy `/tmp/vhco-reusable-secrets-doc.md` are outside the paths I'm allowed to read, so I read neither. I relied on your statement of GitHub's current behaviour: a named caller mapping can refer to a secret that exists only in the environment, and the environment value wins. I did not verify that against the docs or a live run.
+- **The engineering docs:** I did not read any page from the cached engineering docs revision.
+- **Native and live checks:** I did not repeat the native container suite, as allowed. I ran no live jobs, public CI or release. The record's later required steps (public CI, the automatic GitVersion release, then the fixture smoke) are still the author's to do and are not covered by this review.
+- **Side effects:** none. I made no edits to source or Git, created no token or App, and pushed or published nothing. The only possible scratch write is the `scratch/base` folder from the denied command.
