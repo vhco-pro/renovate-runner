@@ -1,6 +1,6 @@
 ---
-status: draft
-status_description: "Revising verification scope after the owner requested one integration smoke test and zero private Actions minutes; existing implementation is preserved."
+status: planned
+status_description: "Owner-accepted reduced integration scope; ready to resume implementation without private CI or live grants."
 issue: https://github.com/vhco-pro/renovate-runner/issues/1
 branch: feat/shared-renovate-runner
 goal: "A reusable owner-operated GitHub Actions runner produces reviewable dependency updates with verified access, privacy and recovery controls."
@@ -51,7 +51,7 @@ Examples retain immutable-SHA pinning and interface checks; a future external ad
 
 Historical implementation checkpoints passed 100 fast tests plus the native image suite, and public CI passed at `8465955ccf5aad6b4d705bdd627fa231dca60882` in run `44190212437`.
 Those observations describe the earlier source; the reduced implementation still needs its own checks and independent review.
-No connected App, test repository, secret or production installation has been created for this runner.
+No connected App, test repository, secret or production installation has been created for this runner. The owner’s November 18 “Go”, following the narrowed scope and zero-private-minutes direction, is recorded as acceptance for implementation; it grants no live setup, merge or release authority.
 This revision reduces verification and rollout prerequisites and repairs the private config layout. The official action’s host-side config stat cannot traverse the old image-owned mode-0700 parent; T12 keeps a host-owned parent and separately binds image-owned data without widening permissions. A local diagnostic reproduced the failure and repaired access; the maintained native regression and implementation review remain pending. Runtime permissions and release controls stay as selected.
 Merge, first release, live setup and production activation remain separately authorized actions.
 
@@ -236,6 +236,7 @@ Code-bearing deliveries run normal public CI. Pure feature-document pushes may s
 - [ ] AC-04: The pinned native image validates the runner's configuration and extracts the supported synthetic dependency formats; actual target compatibility remains an adoption check.
 - [ ] AC-05: Native rate/concurrency/cadence controls and disable/retry behavior are wired and documented, with locally executable health commands that reject disabled, stale or unreadable state.
 - [ ] AC-06: Every approved pilot has verified updater ownership and processing evidence through a valid dependency PR or an observed already-current result, with its remaining policies preserved.
+      Residual: https://github.com/vhco-pro/lab/issues/3
 - [ ] AC-07: The shared GitVersion caller preserves tests-first, dry-run/default-off, exact-source and manual/automatic release controls, with documented source-identity and recovery checks.
 
 ## Test Plan
@@ -306,6 +307,8 @@ None.
 | 2026-11-18 | R-19 | spec | `b76a3d1608a5b29bb487ef3f8c69443d3d1004d5` | claude-opus-5-5 | structural | Two factual should-fix findings and one nit; exact read-only Opus review, CLI limits retained. Non-record dispatcher context remains byte-exact below its separator. |
 | 2026-11-18 | R-20 | spec | `a8485e4c7226ad267b6b37347ad9660a67807f95` | claude-opus-5-5 | structural | Two should-fix findings on regression coverage and one factual review-log nit. |
 | 2026-11-18 | R-21 | spec | `74150636ee0e91696d887519994ea4efc3e6cec1` | claude-opus-5-5 | structural | Two should-fix findings on runtime-layout regression and prose checks, plus one ordering nit. |
+| 2026-11-18 | R-22 | spec | `aa438fe79efe41ee81b264b73fd769e3660fa8c9` | claude-opus-5-5 | structural | One factual typo nit only; no should-fix or blocking findings; native/runtime proof remains implementation work. |
+| 2026-11-18 | R-22 | spec | `aa438fe79efe41ee81b264b73fd769e3660fa8c9` | n/a | n/a | accepted by owner |
 
 ### R-1
 
@@ -1021,6 +1024,15 @@ SEVERITY: nit
 WHERE: Design, Recovery and scheduler health (line 156); Design, Staged integration smoke in Lab (line 180); Context, Owner summary (line 43); Test Plan rows AC-05 and AC-07 (lines 249 and 251); Tasks T12 (line 276)
 EVIDENCE: Line 156, the AC-05 row ("reset the flag, disable/read back both entries") and the AC-07 row ("resets and reads back RENOVATE_ENABLED=false before disabling both entries") put the flag reset before disabling the entries. Line 180 says "disable manual.yml, retain schedule.yml disabled, reset RENOVATE_ENABLED=false", and line 43 says "disable both central entry workflows, reset the enable flag". Either order is safe, because schedule.yml is already disabled and the rows decide what the ordered test asserts. The operational-pause check is also placed in the AC-07 (release) row, while pause and disable behaviour belong to AC-05. Checks run and limitations: as in F-01.
 PROPOSAL: Give line 180 and line 43 the same order as the rows. Move the operational-pause sentence from the AC-07 row to the AC-05 row.
+
+### R-22
+
+FINDING: F-01
+KIND: factual
+SEVERITY: nit
+WHERE: Test Plan row AC-03 (line 247)
+EVIDENCE: The AC-03 row now reads "The the old image-owned parent must fail host stat and the repaired parent must permit it without widening data access." The word "the" is doubled. This revision added it when it rewrote the row in response to R-21 F-01 (`git diff 74150636ee0e91696d887519994ea4efc3e6cec1 HEAD`). It changes nothing that is built or that a proof checks. Apart from this, the revision handles R-21 F-01, F-02 and F-03: the native regression and prepare.mjs now share one storage-layout function, prepare.mjs runs in a fixture, the action wiring check is structured, the AC-07 prose check became a review-time source inspection, the flag reset now comes first in the Owner summary (line 43) and line 180, and the pause check moved to AC-05. I checked those changes against `.github/actions/renovate/action.yml:81-101`, `scripts/prepare.mjs:50-65`, `scripts/cleanup.mjs:4-14`, `scripts/verify-local.mjs:45-145`, `scripts/policy.mjs:40-96` and `tests/workflows.test.mjs:106-117`. They match the Design at lines 130 to 133. The Lab plan smoke steps (lines 216 to 222 and 230 to 235) agree with this document. Lab line 222 still uses the older order (disable first, then reset), but either order is safe there because schedule.yml is already disabled, and Lab is not a target of this review. Checks run: read the reviewer agent file, the pinned `conventions/feature-documents.md` from the docs cache at 0c983f6 (Read tool), AGENTS.md, CLAUDE.md, the document lines 1 to 290 and 860 to 1052 (R-16 to R-21 and Sources), and the full diff from R-21's commit, which changed only the document. `git status --porcelain` was empty. `git cat-file -t 8465955ccf5aad6b4d705bdd627fa231dca60882` returned commit. `vh-adlc lint` returned pass. `vh-adlc fresh` reported R-21 at 7415063 as stale (baseline-changed), no implementation review and a clean feature tree. `vh-adlc gate planned` failed on spec_review_fresh, accepted and on_feature_branch_if_set (the clone is on a detached HEAD, so the current branch is ""). `vh-adlc next` returned owner decision (rule 2, branch). Limitations: Bash was denied for one combined cat/ls/wc/git ls-files listing, which I replaced with Read and Glob, and for `bun run test`. `vh-adlc review check --help` returned only a usage result. It was not run on records because this reviewer cannot write a records file. These were not run: `bun run check:workflows`, `git diff --check`, `verify-local.mjs --pull-only`, `test:native`, `gh` queries and web fetches. So the pinned upstream `src/renovate.ts` host-side config check, the diagnostic probe output at line 132, historical CI run 44190212437 and Lab issue 3 were not observed. Nothing was created or changed in the source, Git refs, providers, Apps, credentials, issues, CI runs or releases.
+PROPOSAL: Change "The the old image-owned parent" to "The old image-owned parent" the next time a revision touches the AC-03 row.
 
 ## Sources
 
