@@ -286,6 +286,7 @@ None for the source revision. The owner directed the smaller integration scope o
 | 2026-11-17 | R-15 | spec | `728af36869ffa8afd753182671c62902a5d638ec` | claude-opus-5-5 | procedural | One factual should-fix and one factual nit; first-party Opus assistant attested, source/Git preserved; reviewer Bash denied. |
 | 2026-11-17 | R-16 | spec | `0f04733032f579f54a79d7b37666857f0294e3c9` | claude-opus-5-5 | procedural | NO FINDINGS; first-party Opus assistant attested, source/Git preserved; reviewer Bash denied and runtime checks unexecuted. |
 | 2026-11-17 | R-16 | spec | `0f04733032f579f54a79d7b37666857f0294e3c9` | n/a | n/a | accepted by owner |
+| 2026-11-18 | R-17 | spec | `d6a1ac414334b5a1fa763656010807f43ae845d4` | claude-opus-5-5 | structural | Five should-fix findings and two nits; first-party model attested, original/clone/companion snapshots preserved under read-only mounts; lint/fresh/gate observed, other checks partly denied. |
 
 ### R-1
 
@@ -840,6 +841,57 @@ PROPOSAL: Reduce Open Questions to "None." and rely on the folded Design text an
 ### R-16
 
 NO FINDINGS
+
+### R-17
+
+FINDING: F-01
+KIND: factual
+SEVERITY: should-fix
+WHERE: Design, Central workflow and policy ownership (line 82); Design, Staged integration smoke in Lab (lines 161 and 166); Context, Owner summary (lines 28 and 37 to 38); Test Plan row AC-05; Tasks T12 (line 261)
+EVIDENCE: Line 82 says "`RENOVATE_ENABLED` defaults false, keeping recurring updates inactive until Lab's approved rollout." Line 161 requires "an explicitly authorized write run producing one valid dependency PR", and line 166 says "The schedule remains disabled during the smoke." In the tree, `.github/workflows/manual.yml:20` runs the job only when `inputs.mode == 'full' || vars.RENOVATE_ENABLED == 'true'`, and `.github/workflows/schedule.yml:9` gates the cron on the same `vars.RENOVATE_ENABLED == 'true'`, with `mode: write` (line 14) and cron `23 5,17 * * *` (line 4). So the variable also gates manual writes, which the document never says. The smoke's write run needs `RENOVATE_ENABLED=true`, and that also arms the twice-daily write-mode schedule over the whole committed policy, unless the operator separately disables `schedule.yml` (the pause mechanism in docs/operations.md:92). The document does not say whether the smoke disables the schedule workflow while the variable is true, adds a separate manual-write switch, or changes manual.yml. T12 does not list manual.yml or schedule.yml. One implementer keeps the variable false as line 82 suggests and cannot make the smoke's write. Another sets it true and leaves the schedule live, against line 166. The AC-05 row ("inactive/default-off controls") and tests/workflows.test.mjs:35 pass either way. This comes from the November 18 revision, which added the smoke's manual write with the schedule disabled. Checks run: read the reviewer agent file, the pinned conventions/feature-documents.md from the docs cache at 0c983f6, the repository AGENTS.md, the whole document, the workflows, the action, policy.mjs, prepare.mjs, renovate-command.sh, config/targets.json, docs/operations.md, tests/workflows.test.mjs, the targeted test greps and the Lab plan docs/internal/plans/opnsense-encrypted-backup.md lines 200 to 239. `vh-adlc lint` returned pass. `vh-adlc fresh` reported R-16 at 0f04733 as stale (baseline-changed, covered-drift) and no implementation review. `vh-adlc gate planned` failed on spec_review_fresh, accepted and on_feature_branch_if_set (the clone is on a detached HEAD). `git rev-parse HEAD` gave the target commit. Limitations: Bash calls were denied for reading the docs cache with cat, for running fresh, gate and next together, and for `git show`/`git branch` combined in Lab. `vh-adlc next`, `vh-adlc review check`, `bun run test`, `bun run check:workflows`, the native suite, `gh` and web fetches were not run. The historical CI run 44190212437 and Lab issue 3 were not observed. No source, ref, provider, App, credential, issue, CI run or release was changed.
+PROPOSAL: State how the smoke makes its manual write while the schedule stays off: for example, set `RENOVATE_ENABLED=true` only after `schedule.yml` is disabled and read back as disabled, or add a separate manual-write switch. Put that control in the AC-05 proof and in the operations guide task.
+
+FINDING: F-02
+KIND: factual
+SEVERITY: should-fix
+WHERE: Design, Staged integration smoke in Lab (lines 160 to 162); Context, Owner summary (line 32); Design, Central workflow and policy ownership (lines 100 to 101); Test Plan rows AC-03 and AC-06
+EVIDENCE: Line 160 seeds only "one representative package manifest/lockfile pair and an invented private canary", and line 161 expects the write run to produce "one valid dependency PR". The generated global configuration in `.github/actions/renovate/scripts/policy.mjs:71-94` sets no `onboarding` or `requireConfig` value, and a search of the tree outside docs/specs finds neither key. Under Renovate's default onboarding behaviour, an unconfigured repository first gets a configuration onboarding PR, not a dependency PR, and the full dry-run reports onboarding. The document does not say whether the seed includes a repository Renovate config, whether the owner merges an onboarding PR first, or whether the global config turns onboarding off. Each choice writes different things to the private target and gives a different first PR. One implementer seeds a config file; another sees an onboarding PR and records the smoke as failed or passed on the wrong PR. Checks run and limitations: as in F-01. The onboarding default comes from Renovate's documented behaviour and was not re-fetched in this pass.
+PROPOSAL: Say whether the seed includes a committed repository Renovate config (and which one), or name the onboarding PR as an expected intermediate step with its merge authority. Make the smoke's pass condition the dependency PR that follows.
+
+FINDING: F-03
+KIND: judgement
+SEVERITY: should-fix
+WHERE: Design, Staged integration smoke in Lab (line 163); Design, Private output and failure handling (lines 135 to 138); Context, Owner summary (line 32); Test Plan row AC-03
+EVIDENCE: Line 163 says "Exercise a controlled configuration/process failure and confirm nonzero propagation with private output still suppressed." Line 138 says the smoke inspects public output "on both normal and controlled failure paths". The document does not name the failure or how it is caused on the live central runner without changing reviewed source. A failure caused by an off-policy `repositories` input, a debug setting or a bad client ID stops in `prepare.mjs` (lines 30 to 48 and 67 to 69) or in the token step. It never reaches `renovatebot/github-action` or the `renovate-command.sh` wrapper, so it proves nothing about the outer action's stdout/stderr handling, which the AC-03 row says only the Lab smoke can observe. A failure caused by an invalid repository config in the target is a different write to the private fixture, and Renovate may report it through an issue rather than a nonzero process exit. Two implementers would exercise different paths, and the AC-03 row's "outer-action logs/summaries/artifacts/caches" check passes on a preflight-only failure. Checks run and limitations: as in F-01.
+PROPOSAL: Name the controlled failure and require it to fail inside the official action's Renovate process, for example by stating what the target or dispatch input is and what nonzero step it must produce. Add that pass condition to the AC-03 row.
+
+FINDING: F-04
+KIND: factual
+SEVERITY: should-fix
+WHERE: Design, Staged integration smoke in Lab (line 169); Design, Central workflow and policy ownership (lines 83 to 84); Context, Owner summary (line 41); Tasks T12 (line 261)
+EVIDENCE: Line 169 says "After the smoke, remove the disposable target from policy and installation access". Line 84 makes `vhco-pro/renovate-fixture-a` the only policy entry, and real targets need a separate concrete grant (line 42 and line 175). `.github/actions/renovate/scripts/policy.mjs:46` rejects a policy whose `repositories.length === 0` ("Invalid trusted target policy"). So removing the only target, as written, leaves a committed `config/targets.json` that every scheduled or manual run rejects. The document does not say whether the removal waits for, or ships with, Lab's real target list, or whether an empty policy becomes a supported inactive state. That removal is itself a covered-path main merge, which releases automatically while `RELEASE_ENABLED` is true (line 207). Today `config/targets.json:4-5` also still names `renovate-fixture-b`; T12 plans that alignment. Checks run and limitations: as in F-01.
+PROPOSAL: Say what the policy holds after the smoke: either the removal is combined with Lab's approved real-target change, or an empty policy is an explicit inactive state that the preflight and tests accept. State whether that change is expected to produce a release.
+
+FINDING: F-05
+KIND: judgement
+SEVERITY: should-fix
+WHERE: Tasks T12 (line 261); Open Questions (line 266); Context, Owner summary (lines 31 to 34); Scope (line 73)
+EVIDENCE: The repository AGENTS.md Verification section says "Read docs/operations.md for setup, evidence boundaries and the connected-test approval requirement" and "Do not substitute unit/static success for real App, update, queue, notification or released-caller proof." The revision drops queue, notification and released-caller proof (line 73, line 127, line 148 and lines 193 to 195), and T12 edits `AGENTS.md` to match. The reviewer instructions say a needed change to repository instructions is raised as an Open Question, never assumed. Open Questions says only "None for the source revision", and the Owner summary records the owner's November 18 direction about test scope, not approval of this instruction change. docs/operations.md:39, 151 and 184 to 195 and tests/operations.test.mjs:37-39 still require the external caller and fixture-key retirement that the revision removes. Checks run and limitations: as in F-01.
+PROPOSAL: Raise the AGENTS.md Verification change as an Open Question, or record the owner's explicit approval of the new wording, before T12 edits it.
+
+FINDING: F-06
+KIND: factual
+SEVERITY: nit
+WHERE: Tasks T12 (line 261); Design, Central workflow and policy ownership (line 98)
+EVIDENCE: Line 98 keeps the checked external example. `examples/external/config/targets.json:4-5` still names `vhco-pro/renovate-fixture-a` and `vhco-pro/renovate-fixture-b`, and the revision removes the second private fixture. T12 lists `examples/connected/` but not `examples/external/`. Checks run and limitations: as in F-01.
+PROPOSAL: Add `examples/external/config/targets.json` to T12, or use invented example names there.
+
+FINDING: F-07
+KIND: factual
+SEVERITY: nit
+WHERE: Open Questions (line 266)
+EVIDENCE: Open Questions reads "None for the source revision. The owner directed the smaller integration scope on November 18. Concrete live App/key/target setup remains part of the Lab rollout approval." The pinned feature-documents.md says an answered question "is folded into the document and removed" and that "None." means every question has been answered. The direction is already folded into Context and Design. R-15 F-02 raised the same pattern. Checks run and limitations: as in F-01.
+PROPOSAL: Reduce Open Questions to "None." once F-05 is settled.
 
 ## Sources
 
