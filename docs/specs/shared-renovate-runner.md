@@ -8,6 +8,7 @@ covers:
   - .github/workflows/
   - .github/actions/renovate/
   - config/
+  - package.json
   - scripts/
   - tests/
   - examples/
@@ -127,6 +128,9 @@ Run one multi-repository Renovate invocation with a job timeout below the token'
 Use native `queue: max` and `cancel-in-progress: false` in the repository's single privileged concurrency group.
 Read the workflow wiring during review. Do not create a separate native queue, interruption or token-expiry certification suite.
 Override the official action's broad temporary-directory mount with an owned mode-0700 directory, matching the image's actual non-root UID/GID.
+Keep its parent run directory owned by the host runner. Put private working data in an image-owned mode-0700 child and the generated config in the host-traversable parent, with the config file mode 0600 and owned by the image UID.
+The pinned official action calls host-side fs.stat on that config before Docker starts. A local owned-volume probe reproduced EACCES with the old image-owned parent, then verified host stat and container read with the separate-file bind layout.
+The action mounts only the working child as /tmp and binds the config separately; cleanup still removes the one owned run directory.
 Do not mount the Docker socket.
 Disable repository scripts, plugins, post-upgrade commands and unrestricted environment forwarding through supported native controls.
 
@@ -149,11 +153,13 @@ Native GitHub failure notifications and the documented owner health check identi
 Health commands and their failure cases are tested locally against controlled API responses.
 Lab checks notification settings and observes normal operation during adoption; no dedicated notification-delivery test infrastructure is added here.
 
-An operational pause disables schedule/manual entry points and drains active runs.
-The previously accepted trust means App-authored jobs may reverse that pause; it is not an App-resistant credential boundary.
+An operational pause resets RENOVATE_ENABLED=false, disables schedule/manual entry points and drains active runs, with readbacks.
+The trusted App can author jobs that re-enable or dispatch workflows, but re-enabling the reviewed entry points alone does not permit writes while the flag stays false. Do not claim the App can directly change that variable.
+These are observed operating controls under the accepted workflow-author trust, not a new assertion of permanent App-resistant isolation.
 A credential stop removes/revokes the App key/access, with outstanding tokens revoked or allowed to expire before a predecessor updater resumes.
 A reviewed source revert restores central behavior; an external consumer can restore its prior immutable pin.
-The small operator guide owns these commands. Runtime secrets and observations remain outside this public source tree.
+The component's docs/operations.md owns the generic smoke setup, success/failure cleanup, retry and production-enable ordering; tests/operations.test.mjs checks those instructions and local guard cases. Lab/VitePress supplies actual values and executed observations.
+Runtime secrets and observations remain outside this public source tree.
 
 ### Staged integration smoke in Lab
 
@@ -161,14 +167,15 @@ After owner-reviewed source integration, Lab uses the central public runner itse
 Read back the private target's Actions setting as disabled before any seed push or PR. If it is not disabled, stop without writing.
 Seed one npm package.json/package-lock.json pair, an invented private canary and a committed renovate.json enabling the npm manager with automatic merging and the dependency dashboard disabled.
 The committed repository configuration avoids an onboarding PR; the pass condition is a dependency-update PR, not a configuration PR.
-Perform a manual full dry-run, then an explicitly authorized write run producing one valid dependency PR.
+At smoke setup, reset RENOVATE_ENABLED=false, disable both entry workflows and read back those states. Enable manual.yml for the approved full dry-run while schedule.yml remains disabled.
+Before the explicitly authorized write, recheck that schedule.yml is disabled, set RENOVATE_ENABLED=true and use manual.yml to produce one valid dependency PR.
 Verify the scoped App access, native caller/defining-workflow identity, public runner label, resulting manifest/lockfile pair and absence of private canaries from public output.
 Failure propagation is proved by the local real-wrapper/native-process checks; the live smoke adds the actual outer-action private-output observation.
 
-Before permitting the smoke write, use GitHub's native workflow control to disable schedule.yml and read back its disabled state. Only then set RENOVATE_ENABLED=true and enable/use manual.yml for the approved one-off write.
 The shared flag also gates manual writes, so setting it is not proof that the cron is disabled; both state readbacks are required.
 The schedule workflow stays disabled through the smoke.
-On a failed check, stop manual processing, retain private diagnosis locally and fix the source/configuration through review before retrying.
+On a failed check, reset the enable flag, disable both entries, cancel/drain active and queued runs and remove fixture App access using the same cleanup as success, with readbacks, before reviewing a repair.
+Retain any partial synthetic branch/PR for evidence with target Actions still disabled. The retry starts the whole smoke setup order again under its grant.
 Do not add real target access while that failure is open.
 After the smoke, disable manual.yml, retain schedule.yml disabled, reset RENOVATE_ENABLED=false and remove test-target App access, uninstalling the empty fixture-only installation if necessary.
 Retain the single syntactically valid placeholder in the inactive committed policy until Lab's approved real-target change replaces it in one reviewed commit. An obsolete manual request would fail scoped token setup; do not add empty-policy support.
@@ -176,6 +183,7 @@ The later target-list commit follows normal enabled GitVersion release behavior;
 The App identity and central protected secret use normal approved credential custody for later rollout; there is no replacement-key/JWT retirement exercise.
 Remove any temporary local key duplicate after secret installation.
 Cleanup is confined to owned test resources under its concrete grant; no existing repository or workload is deleted.
+Retain the synthetic repository and PR with Actions disabled; deleting them needs separate approval.
 
 The Lab spec and its VitePress procedure must adopt this smaller prerequisite before live setup.
 Real Lab/plugin/runner access, updater handover and recurring activation stay under that rollout's concrete approval.
@@ -236,9 +244,9 @@ Code-bearing deliveries run normal public CI. Pure feature-document pushes may s
 | --- | --- |
 | AC-01 | Run actionlint, structured caller/example-interface tests and the pinned native-image fixture. Inspect official action pins, sibling checkout order, disabled persisted credentials, native SHA comparisons immediately before the local helper and github.action_path script paths. Record actual public CI at the reviewed source. No separate public caller is needed. |
 | AC-02 | Execute policy tests refusing wrong organization/subset/mode/caller/SHA/debug values. Inspect the official token-action inputs and explicit permission subset. Document main-only secret custody, App scope and zero-private-minutes setup readbacks for Lab. Actual App authorization and direct-main restrictions are checked during deployment rather than by a separate platform-certification suite. |
-| AC-03 | Execute the real shell wrapper with synthetic successful/failing processes and a native Renovate error, asserting empty streams and unchanged exit status. Inspect official action command-file wiring, selected environment, Docker socket exclusion, owned mode-0700 mount and cleanup. Lab's staged smoke must check actual outer-action logs/summaries/artifacts/caches before real private targets; no component proof claims that live observation has occurred. |
+| AC-03 | Execute the real shell wrapper with synthetic successful/failing processes and a native Renovate error, asserting empty streams and unchanged exit status. Inspect official action command-file wiring, selected environment, Docker socket exclusion, owned mode-0700 working child and cleanup. Exercise the host config-stat/container-read boundary with the real ownership layout; the old image-owned parent must fail host stat and the repaired parent must permit it without widening data access. Lab's staged smoke must check actual outer-action logs/summaries/artifacts/caches before real private targets; no component proof claims that live observation has occurred. |
 | AC-04 | Run native strict validation for generated global and repository policies, including an invalid-policy rejection, plus extraction of the existing invented manager formats and both tool pins. Record actual non-root image tool inventory and writable temporary mount. The native test fails on missing prerequisites. No real update/lockfile matrix across upstream managers is required. |
-| AC-05 | Inspect native force settings, twice-daily cron, shared native concurrency group and inactive/default-off controls. Check that the smoke disables and reads back schedule.yml before setting the shared enable flag for a manual write, then disables both entries and resets that flag afterward. Execute documented health commands against healthy, inactive, stale, failed/malformed API fixtures. Review the owner retry/stop guide. GitHub/Renovate queue, hourly limit, interruption and notification internals are trusted platform behavior; Lab observes its rollout without a stress suite. |
+| AC-05 | Inspect native force settings, twice-daily cron, shared native concurrency group and inactive/default-off controls. Test the generic sequence in docs/operations.md through tests/operations.test.mjs: disable/read back schedule.yml before permitting the one-off manual write; on success or failure reset the flag, disable/read back both entries and drain runs before repair or access cleanup; retry repeats setup. Execute documented health commands against healthy, inactive, stale, failed/malformed API fixtures. GitHub/Renovate queue, hourly limit, interruption and notification internals are trusted platform behavior; Lab observes its rollout without a stress suite. |
 | AC-06 | The owner previously transferred real pilot adoption to Lab issue 3. Keep this criterion unticked with an owner-approved residual after renewed acceptance. Lab owns the single target smoke, zero-private-CI readback, real-repository grants and handover. Fixture/source checks cannot satisfy real adoption. |
 | AC-07 | Run release-mode/current-main guard tests and structured tests-first/default-off/manual-expected-SHA/automatic-main wiring checks against the pinned shared publisher interface. Execute the documented first-enable checks with completed, non-completed, unknown, incomplete and failed-read fixtures before any write. Inspect exact tag/run/review/integration identity comparisons and initial failure/orphan/current-head recovery instructions. Actual first shared version calculation, tag/release readback and source identity are recorded during separately approved delivery; no extra release-fixture repository or tag mutation is required before source integration. |
 
@@ -265,7 +273,7 @@ Tasks T1 through T9 record the prior baseline and remain historical evidence. Th
   Evidence: the five initial operations tests failed on absent docs/operations.md. The completed guide passes 20 procedure tests, including executed native shell/jq commands against invented API responses: healthy versus disabled/stale/no-success scheduling, failed/malformed reads, every non-completed/unknown release status and incomplete pagination before enablement writes. All 77 fast tests pass with 210 assertions on Bun 1.4.4; actionlint 1.7.12 passes and a mismatched installed-version fixture is rejected. The native image strictly validates the repository update policy; its actual regex manager discovers both tool-image pins plus the synthetic provider (three files/dependencies). The final native suite passed 19 assertions in 148.70 seconds, with 17 total dependencies extracted from ten files. Shared release v0.1.1 was independently peeled to the existing b18de6d pin, so its version comment is now tracked without changing execution identity. README links the detailed guide and uses Mermaid; LICENSE contains full Apache-2.0 text and VH & Co BV copyright. Gitleaks 8.21.2 found no leaks in the directory or seven implementation commits at the pre-commit observation. Manual documentation-impact review found no remaining usage mismatch; committed AGENTS.md declares no mechanical roots. Live notifications, App behavior and actual release remain unverified.
 - [x] T9 `scripts/verify-connected.mjs`, `tests/connected.test.mjs`, `examples/connected/` - persist credential-free fixture planning, an exact-source manual caller, native run/privacy readback and the versioned case procedure without creating remote resources (AC-01, AC-02, AC-03, AC-04, AC-05, AC-07).
   Evidence: the new test first failed on the absent verify-connected.mjs module. The resulting 23 connected-helper tests pass with 39 assertions, including executing the actual read-only CLI against controlled native-shaped responses for success, leaked logs/check output, incomplete pagination and API failure. The plan names only the fixture App and three repositories, renders an immutable remote workflow and discloses permissions plus native dispatch/readback commands. Rendered integration.yml passes actionlint. All 100 fast tests pass with 249 assertions. The helper binds caller/run/proof identity and GitHub referenced-workflow SHA, standard Linux labels, entry-point execution and empty artifact inventory; raw API/log errors remain unprinted. Browser summaries, notification delivery and target-local outcomes deliberately require additional native observations. The versioned matrix identifies the setup and manager/rate/queue/retry/timeout/release/retirement cases; any further native probe scripts join T10 before their execution. This is controlled planning/readback proof, not connected acceptance. Manual documentation review linked the procedure from operations and retained all authority and privacy boundaries.
-- [ ] T12 `scripts/verify-connected.mjs`, `tests/connected.test.mjs`, `examples/connected/`, `examples/external/config/targets.json`, `config/targets.json`, `docs/operations.md`, `tests/operations.test.mjs`, `README.md`, `AGENTS.md` - remove the superseded multi-repository verification scaffolding and align the single target policy/docs with this revision; focused tests, lint, secret scan and public CI pass (AC-01, AC-02, AC-03, AC-05, AC-07).
+- [ ] T12 `.github/actions/renovate/`, `scripts/verify-local.mjs`, `tests/native/container.test.mjs`, `tests/workflows.test.mjs`, `scripts/verify-connected.mjs`, `tests/connected.test.mjs`, `examples/connected/`, `examples/external/config/targets.json`, `config/targets.json`, `docs/operations.md`, `tests/operations.test.mjs`, `README.md`, `AGENTS.md` - remove superseded fixture scaffolding, fix the measured host config-stat access without widening private-data permissions, and align the single-target policy/docs; ordered smoke success/failure/retry procedure tests, native ownership regression, lint, secret scan and public CI pass (AC-01, AC-02, AC-03, AC-05, AC-07).
 - [ ] T13 `docs/specs/shared-renovate-runner.md`, reviewed implementation paths - obtain independent exact-source implementation review and pass the source completion gate, retaining the owner-approved Lab adoption residual; live smoke, merge and release are separately reported (AC-01, AC-02, AC-03, AC-04, AC-05, AC-06, AC-07).
 
 ## Open Questions
@@ -957,3 +965,4 @@ PROPOSAL: Add one sentence saying the fixture repository and its PR are retained
 - [Native repository-local composite actions](https://docs.github.com/en/actions/tutorials/create-actions/create-a-composite-action#creating-a-composite-action-within-the-same-repository) support a literal local uses path after the workflow’s exact-source checkout.
 
 - [Native workflow-run status values](https://docs.github.com/en/rest/actions/workflow-runs#list-workflow-runs-for-a-workflow) include pending, requested and waiting as well as queued and in_progress; first enablement checks the unfiltered complete run list for completed status.
+- [Pinned official action config validation](https://github.com/renovatebot/github-action/blob/acdd6bda8b035c99ce59d5675816af2aa65a1774/src/renovate.ts) performs host-side fs.stat before binding the config into Docker; the owned-volume probe established the required host/container ownership layout.
