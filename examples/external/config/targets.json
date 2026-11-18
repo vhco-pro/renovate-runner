@@ -1,0 +1,6 @@
+{
+  "organization": "example-org",
+  "repositories": [
+    "example-org/example-repository"
+  ]
+}

@@ -25,3 +25,17 @@ Composite scripts use `github.action_path`, following the shared coding conventi
 Use the shared GitVersion workflow and tag action for versioning.
 Pin actions and the Renovate image to verified immutable revisions.
 Implementation, repository publication, App permissions and live scheduler activation follow their own owner-approved stages.
+
+## Verification
+
+Use the exact Bun runtime in package.json, Git, Bash and jq. Run `bun run test`, `bun run check:workflows` and `git diff --check`.
+Native changes also run `bun scripts/verify-local.mjs --pull-only`, then `bun run test:native`.
+On Fedora, set `CONTAINER_ENGINE=podman` for both native commands.
+The offline native check uses only invented fixtures and owned temporary resources.
+Read docs/operations.md for setup and evidence boundaries. Source completion uses focused local/native checks and independent implementation review.
+Lab owns one separately approved live App/dependency-PR/private-output smoke after the verified first release; source checks do not claim that live proof.
+No synthetic caller, extra App/key-retirement cycle, or upstream queue/rate/manager certification is required.
+
+Ordinary CI runs only in this public repository on standard Linux runners.
+Private Lab policy and diagnostics stay in Lab's local verification context.
+Keep activation variables disabled and create no App, key, tag or release without the corresponding approval.

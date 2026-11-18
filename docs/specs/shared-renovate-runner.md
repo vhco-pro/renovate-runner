@@ -1,6 +1,6 @@
 ---
-status: in-progress
-status_description: "Implementing the accepted runner on its claimed feature branch; connected grants, merge, release and production activation remain separate."
+status: complete
+status_description: "Source checks and independent Opus review pass with the accepted Lab adoption residual; owner merge, first release and live setup remain pending."
 issue: https://github.com/vhco-pro/renovate-runner/issues/1
 branch: feat/shared-renovate-runner
 goal: "A reusable owner-operated GitHub Actions runner produces reviewable dependency updates with verified access, privacy and recovery controls."
@@ -8,6 +8,7 @@ covers:
   - .github/workflows/
   - .github/actions/renovate/
   - config/
+  - package.json
   - scripts/
   - tests/
   - examples/
@@ -23,127 +24,91 @@ Run Renovate for selected VHCO repositories through one central public scheduler
 
 ### Owner summary
 
-VHCO operates this updater in its public runner repository on standard Linux GitHub-hosted runners.
-This component delivers reusable workflows and verifies them on owned synthetic repositories.
-The existing private Lab rollout owns adoption by this repository, private Lab and the public OPNsense encrypted Git backup plugin.
-Their names may appear publicly, while private source and credentials stay protected.
-Real App grants, scheduler activation and target-specific update evidence are recorded in that rollout.
+VHCO operates the official Renovate Action in one public GitHub repository, using its own selected-repository App.
+Private source is processed inside that job, with raw Renovate output discarded and automatic merging disabled.
+The central cron runs twice daily. Approved manual runs can run at any time.
+Native configuration limits ordinary updates to two commits per repository per hour and five open PRs, retaining Renovate's native exceptions.
 
-The scheduler and manual entry point call the reusable workflow locally from this repository's trusted main branch.
-The reusable workflow calls its internal composite action from the same native-SHA checkout.
-That helper composes the official Renovate and App-token actions and runs its scripts through `github.action_path`.
-The official Renovate Action runs a digest-pinned full Renovate image with bundled tools, and a VHCO-owned App provides short-lived installation tokens.
-The full image has a larger download, while its bundled tool versions are fixed by the selected digest.
-The App key belongs in a main-branch-restricted GitHub environment here.
-Native main-update restrictions exclude the App from direct updates while preserving the trusted owner-admin route for authorized documentation, feature claims and reviewed merges.
-Consumers contain their dependency policies.
-GitVersion releases make the reusable workflow available to separately pinned callers.
-Publication starts only after the owner approves the first release.
-Its first-publication sequence holds main writes, verifies the approved head and that every existing release run is completed, enables publication and dispatches that candidate.
-The hold lasts through completion and readback.
-A failed first publication disables publication; any retry repeats that sequence with an approved candidate.
-If its code needs repair, keep any failed tag as an undelivered attempt and publish the approved fix under the next GitVersion version.
-After successful initial tag/release readback, reviewed main merges publish automatically and current-head recovery applies, even while Lab’s external-caller delivery checks remain pending.
-The owner confirmed source-feature completion at its tested integration, with actual release readback and released-SHA consumption recorded in Lab before production access.
-A later connected fixture session uses a separate fixture-only App after the production App has real-repository access.
+On November 18 the owner rejected the oversized connected test setup and required zero private Actions minutes for this work.
+The smaller scope verifies our configuration, workflow wiring, App access, one representative dependency PR and private-output handling. Failure propagation is exercised locally through the real wrapper and native process.
+It does not certify Renovate's own managers, rate limiting, queue implementation or retry logic.
+Existing useful local/native checks stay; the extra caller repository, second private target and bespoke connected-test harness are removed.
+The owner's November 18 "Go" authorizes T12 to align AGENTS.md Verification with this scope: source checks and independent review remain, while live App/PR/private-output proof belongs to the Lab smoke; queue, notification and synthetic external-caller certification are not required.
 
-The GitHub cron runs twice daily, and approved manual dispatches can run at any time.
-The policy keeps five open ordinary PRs per repository.
-Native Renovate controls allow two ordinary update commits per repository per hourly period, including new branches and automatic rebases.
-The global commit budget is disabled, giving every target its own allowance.
-Automatic merging is disabled, and native security/manual-operation exceptions still apply.
-Public standard-runner compute is free.
-Downstream private workflows and storage have their normal billing boundaries.
+Source completion uses local tests, public read-only CI and independent implementation review.
+The existing Lab rollout owns the live integration smoke after reviewed source integration, using the actual central runner and one disposable private target with Actions disabled.
+The native Actions-disabled readback must pass before any target push or bot PR, so those writes cannot trigger private jobs.
+The production App initially receives only that test target. The central main-only environment holds its key using normal secret custody.
+There is no separate test App or repeated synthetic key-retirement cycle.
+After the smoke, reset the enable flag, disable both central entry workflows and remove test-target App access. Keep the valid inactive placeholder in policy until an approved real-target list replaces it; no empty-policy behavior is added.
+The App's normal protected key custody remains explicit in the setup approval. Real-repository access and recurring activation require their separate concrete grant.
 
-Private Renovate output is discarded with its exit code preserved.
-Public jobs expose fixed progress and success/failure messages.
-Detailed diagnosis uses an owner-local reproduction.
-V1 uses GitHub failure notifications and a documented owner check for a stale or inactive scheduler.
-Synthetic public fixtures establish behavior, while actual Lab configuration checks run locally.
+The first component release still requires owner approval, uses shared GitVersion and preserves exact tags.
+Later reviewed main merges release automatically after enablement.
+Lab records the actual tag/source/run readback and smoke outcome before adopting real repositories.
+A synthetic external caller and a second exercise of the shared publisher are no longer delivery prerequisites.
+Examples retain immutable-SHA pinning and interface checks; a future external adoption verifies its own caller.
 
-Document lint and review-record integrity checks pass.
-Runtime and hosted verification await implementation and the connected setup grant.
-Acceptance authorizes implementation, isolated local tests and ordinary read-only public standard-runner CI.
-The fixture release dry-run and merged main release job each need a contents-write token, which can modify refs/releases and reaches their pinned actions.
-The fixture grant and implementation merge approval must explicitly cover those permissions.
-Publication waits for checks on that exact commit, and workflow-level concurrency serializes release runs.
-After initial tag/release readback, a main change detected before the publisher runs fails that attempt with an owner notification and current-head release-dispatch recovery.
-That recovery covers a newer skip-CI documentation commit arriving while an earlier release run is already active.
-Code-bearing deliveries follow the shared whole-delivery CI-marker rule, including their final metadata commit.
-Connected fixture tests require their own concrete App/test-resource approval.
-Lab owns subsequent real-repository access and recurring-run activation.
-First release approval remains separate from spec acceptance and implementation merge.
-A manual publish names its expected candidate SHA, which the preflight must match before publication.
+Historical implementation checkpoints passed 100 fast tests plus the native image suite, and public CI passed at `8465955ccf5aad6b4d705bdd627fa231dca60882` in run `44190212437`.
+Those observations describe the earlier source. The reduced implementation at 1d95e0648efeb28aaa2fcf4edd54eaeb575ce4ac passed 80 fast tests, 22 native assertions and exact public CI 44265792145 on attempt one. R-25 independently executed the fast checks and inspected the full native CI log, meeting all six source criteria; live adoption remains the accepted Lab residual.
+No connected App, test repository, secret or production installation has been created for this runner. The owner’s November 18 “Go”, following the narrowed scope and zero-private-minutes direction, is recorded as acceptance for implementation; it grants no live setup, merge or release authority.
+This revision reduces verification and rollout prerequisites and repairs the private config layout. The official action’s host-side config stat cannot traverse the old image-owned mode-0700 parent; T12 keeps a host-owned parent and separately binds image-owned data without widening permissions. A local diagnostic reproduced the failure and repaired access; the maintained native regression has now passed locally and on public CI at ba57c33; R-25 independently verified the repaired source through direct fast checks and the full public native CI log. Runtime permissions and release controls stay as selected.
+Merge, first release, live setup and production activation remain separately authorized actions.
 
 ### Background
 
-The official action supports an executable Docker command file and a selected Renovate container.
-Renovate supports App installation tokens, explicit repository lists and native per-repository update limits.
-The selected self-operated execution model is recorded in AGENTS.md alongside its exception to the pinned shared docs' managed-App preference. [Official action](https://github.com/renovatebot/github-action), [GitHub platform](https://docs.renovatebot.com/modules/platform/github/), [Update limits](https://docs.renovatebot.com/configuration-options/)
+The official action supports a Docker command file and a pinned Renovate container.
+Renovate supplies App-token authentication, explicit repository selection, rate controls and update reconciliation.
+Our tests target the integration around those established interfaces.
+AGENTS.md records the owner's self-operated alternative to the pinned conventions' managed-service preference.
 
 ## Scope
 
-Deliver one reusable workflow, its internal repository-local composite helper, central scheduler/manual caller, checked adoption examples, native Renovate configuration and tests.
-Support GitHub.com targets in one organization per invocation on standard public GitHub-hosted Linux runners.
-The component has a trusted fixture allowlist for connected tests.
-The real pilot allowlist and rollout proof are owned by [Lab issue 3](https://github.com/vhco-pro/lab/issues/3).
-The owner selected this split on November 17, preserving the original AC-06 as an explicitly transferred rollout obligation.
+Deliver a reusable workflow, its internal local composite helper, central schedule/manual callers, checked examples, native Renovate configuration, operator docs and focused tests.
+Support GitHub.com repositories in one organization per invocation on standard public GitHub-hosted Linux runners.
+Keep the existing native image inventory, configuration validation and synthetic extraction checks.
+Real pilot adoption belongs to [Lab issue 3](https://github.com/vhco-pro/lab/issues/3), as the owner previously selected.
 
-Dependency scenarios cover GitHub Actions, Docker images, Bun, Composer, Go modules, OpenTofu-compatible provider locks and a synthetic custom package manager matching Lab's update shape.
-Public fixtures use invented source/configuration.
-The real Lab custom-manager check belongs in Lab's local verification.
-Enterprise credentials, private registries, enterprise-specific post-upgrade commands, organization-wide discovery and extra runtime services are deferred.
-Consumer changes use reviewed consumer PRs.
+All test execution and updater execution for this work run from the public central repository.
+The single private smoke target has GitHub Actions disabled before it is seeded or processed.
+Actual private consumer configurations are checked locally, and their bot-triggered workflow paths must not introduce private CI spend as part of this rollout.
+No additional public caller repository, multi-target stress suite, simulated hourly-limit certification or upstream-manager lockfile matrix is required.
+Enterprise credentials, private registries, organization-wide discovery, consumer scripts and extra runtime services remain outside v1.
 
 ## Design
 
 ### Central workflow and policy ownership
 
-`.github/workflows/schedule.yml` and `.github/workflows/manual.yml` live here and call `./.github/workflows/renovate.yml`.
-Their privileged jobs execute from main and use this repository's protected environment.
-This repository provides the central scheduler, App-secret environment interface and native concurrency boundary.
-Its recurring execution remains disabled until Lab activates the approved deployment.
-Lab owns the real allowlist and setting/credential installation, while consumer repositories supply their Renovate policy files.
-Complete examples under `examples/` document central adoption and future external invocation, with their interfaces checked against the reusable workflow.
+`schedule.yml` and `manual.yml` call the local `renovate.yml` reusable workflow.
+The privileged job uses main and this public repository's main-only environment.
+`RENOVATE_ENABLED` defaults false, keeping recurring updates inactive until Lab's approved rollout.
+The active target policy lives in `config/targets.json`, with deployment intent and real target changes owned by Lab.
+Its initial synthetic policy names only `vhco-pro/renovate-fixture-a`; no target processing starts until its concrete setup is approved.
 
-Use the official Renovate Action at a verified commit and the official full Renovate image at an exact digest with `binarySource: global`.
-Record the bundled Node, Bun, Go, PHP and Composer versions when selecting the image and verify every supported manager against that inventory.
-Manager executables come from the pinned image.
-Native artifact checks must expose incompatible consumer tool constraints, keeping that target's adoption pending review of the image pin.
-Pin the App-token action and other external workflow components to verified commits.
-Use native configuration validation and set `exitCodeForErrors: true`, whose experimental upstream behavior is checked with the pinned runtime.
-Known repository error states produce a nonzero aggregate result while other targets are still processed.
-Native benign results such as a disabled or archived target retain their documented treatment.
-Lab adoption additionally requires target-specific evidence of actual processing, using an update PR or a successful full run and target-local dashboard showing that no ordinary updates are pending. [Error policy](https://docs.renovatebot.com/self-hosted-configuration/#exitcodeforerrors)
+Use the official Renovate Action and official full image at immutable pins, with `binarySource: global`.
+Record the actual Node, Bun, Go, PHP and Composer inventory, validate native configuration and retain synthetic extraction coverage.
+The image has no Terraform or OpenTofu CLI; Renovate performs Terraform lockfile handling internally.
+Incompatible consumer tool constraints hold that consumer's adoption until addressed through a reviewed image/configuration change.
+Normal Renovate policy maintains the runner's own action, runtime and image dependencies.
 
-Trusted organization configuration under `config/` supplies selected rate/merge controls and the active allowlist installed from reviewed deployment inputs.
-The connected caller fixture supplies its own synthetic allowlist as caller-owned trusted configuration through the same validated interface.
-The reusable workflow orchestrates native checkout and action calls.
-First check out caller-owned trusted policy from `github.repository` at `github.sha` into fixed workspace path `_vhco-policy`.
-Then check out the implementation using `job.workflow_repository` and `job.workflow_sha` into sibling path `_vhco-runner`.
-Both checkouts use their explicit paths and `persist-credentials: false`.
-After both checkouts, one inline step compares each checkout HEAD with its expected native SHA.
-The implementation HEAD comparison runs immediately before the literal `uses: ./_vhco-runner/.github/actions/renovate` step, with no intervening checkout or caller code execution.
-That internal composite action owns runtime scripts under `.github/actions/renovate/scripts/`, invokes them through `github.action_path` and composes the pinned official App-token and Renovate actions.
-Pass expected repository, workflow path and commit from native job context to the action; its first checks validate those fields and matching implementation HEAD before token creation.
-The local helper has the defining workflow’s checkout identity and no separate version/pin or public action API.
-This follows the pinned workflow/action boundary and GitHub’s local-composite mechanism.
-Root `scripts/` holds only local verification and non-reusable entry-point tooling as needed.
-Read the trusted policy only from the verified `_vhco-policy` sibling checkout.
-Validate organization and target selection before token creation.
-Target repository files cannot widen that selection.
-The scheduler owns the twice-daily UTC cron, away from the start of the hour.
-Use native `force` overrides for `schedule: []`, `commitHourlyLimit: 2`, `prConcurrentLimit: 5` and `automerge: false` so target schedules cannot make delayed runs or approved manual dispatches ineffective.
-The empty Renovate schedule permits updates whenever the central process is explicitly running.
-Automatic invocation frequency comes from the GitHub cron.
-Other consumer rules retain their normal ownership.
-Leave `prCommitsPerRunLimit: 0` in the self-hosted configuration.
-Security fixes and owner-requested operations retain upstream exceptions, so these controls establish an ordinary-update rate, with no promise of a hard total per run. [Native controls](https://docs.renovatebot.com/self-hosted-configuration/#force), [Per-repository limits](https://docs.renovatebot.com/configuration-options/#commithourlylimit)
+The reusable workflow first checks out caller policy from `github.repository` at `github.sha` into `_vhco-policy`, then defining-workflow source from `job.workflow_repository` at `job.workflow_sha` into `_vhco-runner`.
+Both disable persisted checkout credentials.
+Immediately before the literal local-helper step, compare both HEADs with the expected native SHAs.
+The helper runs its own scripts through `github.action_path`; expected repository, workflow path and commit come from native job context.
+Validate these identities, debug settings and the selected target subset before creating an installation token.
+Target configuration cannot widen the trusted allowlist.
+The checked external example uses a `FULL_COMMIT_SHA` placeholder that an adopter replaces with its verified release commit.
+
+Use native `force` settings for `schedule: []`, `commitHourlyLimit: 2`, `prConcurrentLimit: 5` and `automerge: false`.
+Keep `prCommitsPerRunLimit: 0`, allowing each target its ordinary native allowance.
+The central twice-daily UTC cron controls cadence; target schedules cannot suppress an approved invocation.
+Native security/manual exceptions remain as documented upstream.
+Tests inspect this wiring rather than rebuilding or stress-testing Renovate's rate-limit implementation.
 
 ### Authentication and execution
 
-Use a VHCO-owned App installed on selected repositories.
-The setup approval names the exact repository selection and the following App permissions.
+Use the VHCO-owned App, with a selected-repository installation and the following intended permissions.
+Concrete setup approval still names the exact installation and key custody before any live change.
 
 | Permission scope | Level |
 | --- | --- |
@@ -151,278 +116,175 @@ The setup approval names the exact repository selection and the following App pe
 | Repository Checks, Commit statuses, Contents, Issues, Pull requests and Workflows | Read/write |
 | Organization Members | Read |
 
-Merge-queue integration is deferred.
-Token generation explicitly requests the approved permission subset through the official action's `permission-*` inputs and retains implicit Metadata read access.
-Connected verification reads back installation permissions and checks the requested token permissions with positive/negative API probes on owned fixtures. [App requirements](https://docs.renovatebot.com/modules/platform/github/), [Token permissions](https://github.com/actions/create-github-app-token#permission-permission-name)
-Keep the production App key in the protected environment of this central runner.
-During connected testing, the public caller fixture temporarily holds its own revocable App key under the same native protections.
-If the active fixture key is the App’s only registered key, generate the replacement key GitHub requires before deleting it.
-Keep its downloaded PEM only in a protected temporary location excluded from backups, record its public fingerprint and remove the PEM in that same setup session.
-Read back the replacement key record and verify no retained replacement secret/file exists.
-Its public key record remains on the App, with its private material discarded.
-Then revoke the active fixture App key.
-While its protected secret still exists, run the fixture retirement workflow to sign a JWT and observe its rejection by GitHub.
-Then delete that secret, remove fixture installation access and read back both removals.
-The retained active-key secret exists only until the rejection probe finishes.
-Record active-key retirement, the replacement fingerprint and private-material removal before Lab grants real-repository access.
-Lab generates a new production key and removes that unusable replacement key record.
-Release delivery never requires keeping a test key alive between sessions.
-Configure an explicit selected-branch rule allowing main and denying other branches/tags, independently of checks inside YAML.
-A non-main workflow with its in-file guard removed must still be unable to obtain that secret.
-Before adding a key, configure a native main-update ruleset permitting the trusted owner-admin route and excluding the App and other writers from bypass.
-This preserves the existing documentation/claim workflow and keeps code merges under owner review.
-Verify the effective rules and an installed App's rejected direct push using the key-holding public caller fixture.
-Lab repeats the direct-push denial on this runner after its real installation grant and before handing a token to Renovate. [Main update restrictions](https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/managing-rulesets/available-rules-for-rulesets#restrict-updates)
+Keep the App key in the central runner's main-only environment, with main-update restrictions excluding the App's direct pushes and preserving the trusted owner-admin route.
+Read back those settings before supplying the key.
+The standard App-token action requests the explicit reviewed permission subset for only the selected repositories and retains normal completion-time token revocation.
+The ordinary `GITHUB_TOKEN` is contents-read.
+PR CI receives no App credentials.
+As previously accepted, an App with workflow write is a trusted workflow author; its authored jobs can request native job tokens and OIDC.
+Lab records that trust and checks production-secret/federation boundaries before real-repository access.
 
-Generate installation tokens through the pinned official App-token action with explicit organization/repository scope and normal completion-time revocation.
-Keep the key in that step's secret input, pass only required token/configuration values to Renovate, and give the ordinary `GITHUB_TOKEN` contents-read permission.
-PR verification runs without App credentials.
-Reject unlisted targets, wrong organizations, invalid modes and unsupported calling contexts before token generation.
-External reusable-workflow callers supply their own environment and App key and own their billing and concurrency boundary. [Environment restrictions](https://docs.github.com/en/actions/reference/workflows-and-actions/deployments-and-environments), [Reusable workflow boundaries](https://docs.github.com/en/actions/reference/workflows-and-actions/reusing-workflow-configurations)
+Run one multi-repository Renovate invocation with a job timeout below the token's one-hour lifetime.
+Use native `queue: max` and `cancel-in-progress: false` in the repository's single privileged concurrency group.
+Read the workflow wiring during review. Do not create a separate native queue, interruption or token-expiry certification suite.
+Override the official action's broad temporary-directory mount with an owned mode-0700 directory, matching the image's actual non-root UID/GID.
+Keep its parent run directory owned by the host runner. Put private working data in an image-owned mode-0700 child and the generated config in the host-traversable parent, with the config file mode 0600 and owned by the image UID.
+The pinned official action calls host-side fs.stat on that config before Docker starts. The diagnostic `bun /tmp/vhco-config-stat-probe.mjs` used Podman with `ghcr.io/renovatebot/renovate:44.251.0-full@sha256:ccc4dc0852667fdbd6b32273d58a247e8b97f7c3a629b1ccd4e4b8712c0b8e2c` and returned `{"hostUid":1000,"imageUid":12021,"oldError":"EACCES","hostCanStat":true,"imageCanRead":true}`. T12 persists that regression in scripts/verify-local.mjs; the diagnostic alone is not implementation acceptance.
+The action mounts only the working child as /tmp and binds the config separately; cleanup still removes the one owned run directory.
+Do not mount the Docker socket.
+Disable repository scripts, plugins, post-upgrade commands and unrestricted environment forwarding through supported native controls.
 
-Use one multi-repository Renovate invocation for each central run and a timeout below the one-hour installation-token lifetime.
-Add an installation grant and verify its effective access before adding a target to the active allowlist.
-For normal retirement, remove the target from that allowlist before withdrawing access.
-A scoped-token failure fails the whole run before target processing and reaches the owner through workflow failure notification.
-GitHub concurrency serializes privileged runs for the organization within this central repository using `queue: max` and `cancel-in-progress: false`.
-Queued manual requests survive later scheduled/manual arrivals within GitHub's native capacity of 100 pending runs.
-Queue overflow remains a visible native cancellation that the owner health procedure can identify.
-The official action's `docker-volumes` overrides its host-wide `/tmp:/tmp` default with a job-owned temporary directory.
-Resolve the selected image's non-root runtime UID/GID and explicitly use that identity.
-Create its temporary mount with matching ownership and mode `0700`, then verify writes and native package-manager execution under that identity.
-Keep the Docker socket unmounted and private working data outside the checked-out public source tree.
-Disable repository-supplied post-upgrade commands, lifecycle scripts and unrestricted environment forwarding using supported native controls.
-The runner's own update configuration maintains its tool pins. [Official action](https://github.com/renovatebot/github-action), [Self-hosted controls](https://docs.renovatebot.com/self-hosted-configuration/)
+### Private output and failure handling
 
-### Private data and diagnostics
+Repository names may be public. Private contents, credentials, canaries and raw diagnostics have no public cache, artifact, step summary or committed output.
+The official action invokes the real command wrapper, which discards stdout/stderr and preserves Renovate's exit status.
+Local tests execute that wrapper for successful and failing processes, including a real native Renovate error.
+Debug and step-debug settings are rejected before token creation.
+The staged Lab smoke inspects the actual outer action's public logs, summaries, artifacts and caches for invented private canaries on its successful integration path.
+Forced failures stay local: execute the real wrapper with failing processes and a native invalid-platform error. This preserves failure/private-output proof without another live failure-injection mechanism.
+Retain only sanitized metadata and conclusions; detailed diagnosis stays in an explicitly authorized owner-local reproduction.
+Failure is not turned into a passing job by output suppression.
 
-The public allowlist and run metadata may identify the selected VHCO repositories.
-Private configuration, source, canary values, credentials and raw diagnostics have no public cache, artifact, step summary or committed output.
-Public in-repository test data under `tests/` and the owned private fixture repositories contain generic invented material.
-Real Lab configuration and its check evidence remain in Lab's local verification context.
+### Recovery and scheduler health
 
-Use the official action's executable command-file interface to send both Renovate output streams to `/dev/null` while preserving Renovate's exit status.
-Verify the actual pinned action/container entry point and fixed public result messages.
-Reject Actions debug/step-debug mode before token generation or processing a private target.
-Test both normal and failure paths, including outer action output and hosted logs, summaries and artifact inventory.
-Target-local dashboards and PRs provide repository-scoped feedback.
-Detailed diagnosis needs a separately authorized owner-local reproduction. [Action interface](https://github.com/renovatebot/github-action), [Masking limits](https://docs.github.com/en/actions/reference/security/secure-use)
+Use Renovate's native branch/PR reconciliation on a later schedule or approved manual retry.
+A timeout can leave earlier updates intact and later targets unprocessed; the owner can diagnose locally and retry an allowed healthy subset.
+Native GitHub failure notifications and the documented owner health check identify failed runs, disabled scheduling and successful schedules older than 72 hours.
+Health commands and their failure cases are tested locally against controlled API responses.
+Lab checks notification settings and observes normal operation during adoption; no dedicated notification-delivery test infrastructure is added here.
 
-### Failures, retries and scheduler health
+An operational pause resets RENOVATE_ENABLED=false, disables schedule/manual entry points and drains active runs, with readbacks.
+The trusted App can author jobs that re-enable or dispatch workflows, but re-enabling the reviewed entry points alone does not permit writes while the flag stays false. Do not claim the App can directly change that variable.
+These are observed operating controls under the accepted workflow-author trust, not a new assertion of permanent App-resistant isolation.
+A credential stop removes/revokes the App key/access, with outstanding tokens revoked or allowed to expire before a predecessor updater resumes.
+A reviewed source revert restores central behavior; an external consumer can restore its prior immutable pin.
+The component's docs/operations.md owns the generic smoke setup, success/failure cleanup, retry and production-enable ordering; tests/operations.test.mjs checks those instructions and local guard cases. Lab/VitePress supplies actual values and executed observations.
+Runtime secrets and observations remain outside this public source tree.
 
-Use native Renovate branch and PR handling on retry.
-An interrupted run may leave a bot branch or PR for the next authorized invocation to reconcile.
-Targets use the committed allowlist order.
-A job timeout stops the aggregate run, leaves completed target changes intact and can leave later targets unprocessed.
-Persistent slowness requires owner diagnosis or a manual dispatch restricted to the other allowed targets before retrying the slow target.
-The selected native limits prevent budget starvation during normal processing, while a persistent timeout remains an explicit operator-recovery case.
-A nonzero native result remains a failed job, with GitHub workflow notifications configured for the owner.
-Retry occurs on a later scheduled run or an explicit owner dispatch.
-The owner health procedure reads workflow state, the latest scheduled run and recent cancelled manual/scheduled runs through native GitHub CLI/API commands.
-It identifies disabled scheduling, a last successful run older than 72 hours and native queue-overflow cancellations, and documents re-enabling and an approved retry.
-Exercise that procedure with inactive and stale fixtures before adoption.
+### Staged integration smoke in Lab
 
-GitHub may delay/drop scheduled jobs and disables inactive public-repository schedules after 60 days.
-V1's inactive/stale detection depends on the owner running that procedure.
-Verify failure-notification settings and identify the scheduled-workflow notification recipient during connected setup.
-Keep the generic health, delivery-readback and key-retirement ordering procedure in covered `docs/operations.md` so it remains available during local host outages.
-Its commands use placeholders and native Git/GitHub interfaces.
-`tests/operations.test.mjs` statically checks those documented commands, required identity comparisons and ordering; actual deployment values and executed evidence stay in Lab/VitePress. [Schedule behavior](https://docs.github.com/en/actions/reference/workflows-and-actions/events-that-trigger-workflows#schedule)
+After owner-reviewed source integration, Lab uses the central public runner itself and the real App initially selected only for `vhco-pro/renovate-fixture-a`.
+Read back the private target's Actions setting as disabled before any seed push or PR. If it is not disabled, stop without writing.
+Seed one npm package.json/package-lock.json pair, an invented private canary and a committed renovate.json enabling the npm manager with automatic merging and the dependency dashboard disabled.
+The committed repository configuration avoids an onboarding PR; the pass condition is a dependency-update PR, not a configuration PR.
+At smoke setup, reset RENOVATE_ENABLED=false, disable both entry workflows and read back those states. Enable manual.yml for the approved full dry-run while schedule.yml remains disabled.
+Before the explicitly authorized write, recheck that schedule.yml is disabled, set RENOVATE_ENABLED=true and use manual.yml to produce one valid dependency PR.
+Verify the scoped App access, native caller/defining-workflow identity, public runner label, resulting manifest/lockfile pair and absence of private canaries from public output.
+Failure propagation is proved by the local real-wrapper/native-process checks; the live smoke adds the actual outer-action private-output observation.
 
-### Connected fixture setup
+The shared flag also gates manual writes, so setting it is not proof that the cron is disabled; both state readbacks are required.
+The schedule workflow stays disabled through the smoke.
+On a failed check, reset the enable flag, disable both entries, cancel/drain active and queued runs and remove fixture App access using the same cleanup as success, with readbacks, before reviewing a repair.
+Retain any partial synthetic branch/PR for evidence with target Actions still disabled. The retry starts the whole smoke setup order again under its grant.
+Do not add real target access while that failure is open.
+After the smoke, reset RENOVATE_ENABLED=false, disable manual.yml, retain schedule.yml disabled and remove test-target App access, uninstalling the empty fixture-only installation if necessary.
+Retain the single syntactically valid placeholder in the inactive committed policy until Lab's approved real-target change replaces it in one reviewed commit. An obsolete manual request would fail scoped token setup; do not add empty-policy support.
+The later target-list commit follows normal enabled GitVersion release behavior; it is not an extra first-release approval.
+The App identity and central protected secret use normal approved credential custody for later rollout; there is no replacement-key/JWT retirement exercise.
+Remove any temporary local key duplicate after secret installation.
+Cleanup is confined to owned test resources under its concrete grant; no existing repository or workload is deleted.
+Retain the synthetic repository and PR with Actions disabled; deleting them needs separate approval.
 
-Credential-free local tests cover static validation, controlled action/container behavior and API fixtures.
-Connected proofs require separate approval naming the App, exact permissions, protected secret custody and owned resources.
-Use working names `vhco-renovate`, private `vhco-pro/renovate-fixture-a` and `vhco-pro/renovate-fixture-b`, and public `vhco-pro/renovate-caller-fixture`, subject to availability and the concrete approval.
-The App stays fixture-only throughout this stage.
-Its private key can authorize every installation selected for that App, regardless of one token's requested repository subset.
+The Lab spec and its VitePress procedure must adopt this smaller prerequisite before live setup.
+Real Lab/plugin/runner access, updater handover and recurring activation stay under that rollout's concrete approval.
+The smoke and adoption use public execution only. No private Actions job or external managed Renovate service is required.
+The first verified component release precedes the smoke. If the smoke exposes a source defect, record the failed release/run, integrate its reviewed fix, read back the resulting automatic release and repeat the smoke before adoption. Preserve the earlier tag.
 
-The public caller fixture's main holds minimal manual-only integration, key-retirement and shared-release dry-run workflows, synthetic trusted configuration and the checked external-call example.
-It has its own main-restricted environment, protected main and revocable fixture key.
-It never receives this runner's Git history, scheduled workflow or repository-root release state.
-The private fixtures contain invented manifests, canaries and Renovate configuration only.
-The integration workflow invokes the exact reviewed reusable-workflow commit remotely, with an explicit synthetic allowlist for private fixtures A/B.
-The caller fixture joins the requested App token's repository selection only for the direct-main-update denial probe.
-Static checks establish that the real schedule/manual entry points use the same reusable workflow, inputs and concurrency group.
-Three overlapping manual invocations of that reusable job in the public caller fixture establish native queue behavior in one caller repository.
-Actual central activation and its real-environment readbacks belong to Lab.
+### Component release and source identity
 
-Real lockfile/branch updates and per-repository commit counting use the approved GitHub fixtures because Renovate's local platform performs lookup without creating branches.
-Connected proofs cover manager updates, per-target limits, secret-branch/main-update denial, token scope/revocation, public-log inspection, three queued runs, interrupted PR reuse, missing installation access, timeout recovery and owner notifications.
-Private fixture contents and detailed diagnostics follow the selected discard policy.
-Retire the fixture key/access as described above at the end of each active test session.
-A later fixture session requires a fresh concrete grant and new test key.
+Use the pinned shared GitVersion release workflow and its native existing-tag/release behavior.
+The repository source is the release artifact. Preserve exact `v`-prefixed semantic tags; no handwritten version counter or movable aliases.
+Checks precede the publisher, with a contents-write job token disclosed in implementation-merge approval, including when the shared workflow dry-runs.
+`RELEASE_ENABLED` defaults false. A disabled publisher or manual `dry-run: true` computes the shared version without tag/release writes.
+A separate caller-fixture release exercise is unnecessary.
 
-### Component release and Lab rollout
+Retain `release.yml` main-push and manual entry points, workflow-level native concurrency, and the current-main source preflight.
+Manual publishing requires `dry-run=false` and a matching full lowercase `expected-sha`; effective dry-run ignores that input, while enabled main pushes use their native run SHA.
+The preflight refuses a source that is no longer current main before invoking the shared publisher.
+Tests cover these integration guards and inputs; they do not certify shared GitVersion internals.
 
-The owner directed this component to follow the existing shared release standard on November 17.
-Use its same-workflow `GITHUB_TOKEN` contents-write publisher, exact `v`-prefixed semantic tags, check-first execution and SHA-pinned external consumption.
-Updater access keeps its reviewed native App permission set.
-Deployment secret isolation and exact source/run verification remain explicit checks. [Standard release contract](https://github.com/vhco-pro/docs/blob/0c983f6793bfe35eb96ae95ad0c361c6200af44f/knowledge/shared-delivery.md)
-#### First-release source identity
+The first owner-approved publish records the review/integration/candidate mapping.
+The integration commit descends from the implementation review, the release source descends from integration, and tracked contents over this feature's `covers` are unchanged from review.
+The exact release tag peels to the successful run's approved source and its public release exists.
+Lab retains the executed identity checks and first-release observation.
+External-example consumption is verified when an external consumer is actually adopted, rather than by creating a synthetic public caller.
 
-Record the implementation-review commit and its merged integration commit.
-The candidate release commit is the current main head selected by the approved release run.
-The tag must peel to that exact run commit, and the external caller must execute that exact released commit.
-The integration commit must descend from the implementation-review commit, and the release commit must descend from the integration commit.
-Compare the review and release commits over the paths in this feature’s `covers`; their tracked contents must be identical.
-Completion metadata, merge ancestry and other uncovered documentation may give those commits different identities.
-A covered-path difference requires the appropriate fresh review before treating the release as that reviewed implementation.
-The first-release approval identifies the verified candidate/review/integration mapping.
-Generic `docs/operations.md` contains the comparison commands with placeholders.
-Lab’s task history and its maintained VitePress operating record retain the actual mapping, executed commands and results.
+Keep the previously selected first-publication controls: hold main before reading its head or release runs, require the approved head and a complete run list with all statuses completed, enable publication, dispatch the exact candidate, and retain the hold through completion/readback.
+An unknown/incomplete state holds enablement. A lost response requires native reconciliation before another dispatch.
+On initial failure, disable publication, retain the hold until the run completes, then inspect tag/release state.
+Before lifting the hold for a reviewed repair, verify publication disabled.
+Retries repeat the first-publish sequence under the approved mapping.
+An orphan tag can be completed only while its peeled source and held current main still equal the approved candidate.
+If a repair supersedes it, preserve that tag as an abandoned, undelivered attempt, record the source/run/disposition in Lab and issue 1, and obtain approval for the repaired mapping and next GitVersion result.
+Never move/delete/reuse a tag or publish superseded source merely to complete it.
 
-The source workflow repository is the release artifact.
-The central caller uses its local workflow from the same commit.
-External adopters pin a verified exact release commit and own their scheduler, credentials, billing and concurrency boundary.
-An unreleased exact reviewed SHA can be tested before merge and is labelled as such.
-The committed example starts with `FULL_COMMIT_SHA` and instructions to substitute a verified release SHA/tag.
-The example checker substitutes the reviewed SHA and an unreleased-review comment during component verification.
-Keep the committed adoption example as a generic placeholder template.
-For delivery verification, render it in the owned caller fixture using the read-back release commit and exact semantic-version comment, and record that fixture revision.
+Successful initial tag/release readback ends the first-publish hold, even while Lab's smoke/adoption is pending.
+Later reviewed main merges release automatically while enabled.
+Later recovery uses a fresh current-main dispatch with matching expected SHA, including after skip-CI documentation; rerunning an old run repeats its source.
+No source change gains merge/release/production authority from this document alone.
 
-Ordinary PR CI has no App key and uses contents-read permission.
-Calculate the component's candidate version through the pinned shared GitVersion tag action in dry-run mode on its full source history, with refs/releases compared before and after.
-The public caller fixture separately exercises the pinned `vhco-pro/gh-release-workflow` with fixed `dry-run: true` against the fixture's own history.
-That proof verifies the shared workflow interface and its dry-run behavior, without claiming a component release/version from fixture history.
-Its job needs explicit contents-write permission, whose temporary token can modify fixture refs/releases and reaches the pinned job actions.
-The connected-test approval must include that capability.
-Shared workflow outputs are `version`, `tag`, `tagged` and `release-url`.
-Dry-run yields a nonempty calculated `version`, `tagged: 'false'`, empty `tag` and empty `release-url`, with unchanged remote refs/releases.
-The tag action's internal `pushed-tag` is not a shared-workflow output.
-
-The production release caller is `.github/workflows/release.yml`, supporting main pushes and owner `workflow_dispatch` through the pinned shared workflow.
-Its boolean `dry-run` input defaults to true, following the shared example.
-Add an optional string dispatch input `expected-sha`, defaulting to empty.
-A manual dispatch that will publish requires a full lowercase 40-character SHA in that input.
-Whenever effective dry-run is true, ignore `expected-sha`, including missing, malformed or mismatched values.
-Enabled automatic main pushes use their native run SHA and require no dispatch input.
-Before invoking the publisher, compare a publishing dispatch’s run commit with its supplied expected SHA and fail on a missing, malformed or mismatched value.
-The first publish copies the candidate SHA named in its owner approval into that input.
-After successful initial publication readback, later manual recovery copies the intended current reviewed main SHA; enabled automatic main pushes use their native run SHA under the existing automatic-release policy.
-A failed first publication instead follows the first-publication recovery sequence below.
-Effective dry-run is true whenever publication is disabled, or when an owner dispatch leaves `dry-run` true; enabled main pushes publish.
-The first approved publish and later recovery use `gh workflow run release.yml --ref main -f dry-run=false -f expected-sha="$RELEASE_SHA"` after enablement, and wait for that exact run’s checks/publication.
-`RELEASE_SHA` is the approved candidate for first publication and the intended current reviewed main commit for later recovery.
-The separate Renovate `manual.yml` controls dependency runs.
-The `release.yml` publisher job depends on successful required tests for its exact run commit.
-Set workflow-level concurrency on the main/manual release caller using one repository-wide native group, `release-${{ github.repository }}`, with `queue: max` and `cancel-in-progress: false`, independent of the Renovate-run group.
-The group covers tests, source preflight and the shared release job.
-After tests and before invoking the shared publisher, read the current main head and compare it with the run’s exact source commit.
-If the main head changed, fail with an explicit source-moved result before tag/release mutation and notify the owner.
-After successful initial publication readback, recover through the release workflow’s current-main dispatch with `dry-run=false` and its matching `expected-sha` after publication is enabled and checks pass, including when the intervening commit was skip-CI documentation and started no new run.
-Before that initial publication readback, use the first-publication recovery sequence below.
-Initial publication readback means the exact tag peels to the approved candidate and its corresponding public release exists, with the successful run’s source matching that candidate.
-It ends first-publication recovery and the main hold.
-Lab’s later released-SHA external-caller and fixture-retirement checks remain separate delivery prerequisites; they do not block current-head release recovery.
-Release runs remain serialized even if GitHub starts queued requests out of source order.
-A newer head makes an older attempt fail whether that newer head is unpublished, failed or documentation-only.
-This serializes ref/release writes while retaining queued requests within GitHub’s native capacity.
-A failed test prevents the release job.
-Use the pinned shared publisher’s native existing-tag behavior: the tag action skips an already-present remote tag, and the release action preserves an existing release or finishes an absent release for that tag.
-Its green result alone establishes no source-identity claim.
-The generic published-component readback checklist and post-merge ordering sequence live in covered `docs/operations.md`, using native Git/GitHub commands and placeholders.
-`tests/operations.test.mjs` checks its documented version/tag/source comparisons and fixture-retirement-before-production ordering.
-Lab supplies concrete deployment values and executes the real comparisons, with its maintained VitePress guide recording the deployment-specific procedure.
-First-release delivery verification applies the source-identity rule above: exact tag/run/caller commit equality, review-to-integration-to-release ancestry and unchanged covered contents from the implementation review.
-A mismatch keeps issue 1 open and Lab inactive.
-Keep exact tags stable.
-Before initial publication readback, use the first-publication recovery sequence; afterward use the shared standard’s current-head dispatch/reviewed repair path, including while Lab delivery verification is pending.
-Repository variable `RELEASE_ENABLED` defaults to unset/false, which forces dry-run and prevents tag/release publication on initial implementation merge.
-The release job declares contents-write, including while dry-running, and that capability requires explicit implementation-merge approval.
-The first owner-approved release authorizes the candidate publish after merge, required checks and the documented release-source identity comparison.
-Covered `docs/operations.md` defines the first-publication sequence.
-Hold main pushes and merges before reading its head or release runs.
-Verify the held head equals the approved candidate, then read the complete release-workflow run list and require every existing run’s status to equal `completed`.
-Any non-completed status holds enablement, including `requested`, `waiting`, `pending`, `queued` and `in_progress`; unknown statuses also hold.
-Incomplete or failed run-list reads hold enablement.
-Set `RELEASE_ENABLED=true`, then dispatch the approved candidate with `dry-run=false` and its `expected-sha`, recording that exact run ID.
-Keep the main quiet period through the candidate’s completion and initial release readback.
-An unexpected tag from a different route or candidate holds initial publication until its exact source and disposition are recorded.
-An owner-approved abandoned-attempt disposition for a superseded failed candidate follows the recovery path below.
-Lab remains inactive and issue 1 stays open until a later approved release passes delivery verification.
-If the first candidate fails, set `RELEASE_ENABLED=false`, retain the main hold and wait for that attempt to complete before reading its result, tag and release state.
-A retry repeats the full first-publication sequence, including the main hold before head/run-list verification and enablement, using the approved candidate and source-identity mapping.
-A tag left without a release may be completed through the same shared publisher only when it peels to that approved candidate and the held current main is still that commit.
-Never move or delete the tag as recovery.
-If a source repair is needed, verify publication is disabled before lifting the main hold for its normal reviewed change.
-The changed candidate needs first-release approval with its refreshed source-identity mapping before retry.
-When a failed candidate’s tag exists without a delivered release and a reviewed source repair supersedes it, preserve that exact tag as an abandoned, undelivered attempt.
-Record its tag, peeled source, failed run and disposition in the Lab delivery record and component issue 1.
-Do not publish the superseded candidate merely to finish that tag.
-The next first-release approval names the repaired candidate/source-identity mapping and the retained abandoned tag.
-Use the next version calculated by shared GitVersion from the preserved history; do not reuse the abandoned tag or hand-set the version.
-The repaired candidate’s successful initial publication readback becomes the first delivered release for the remaining Lab verification.
-That recorded abandoned tag no longer blocks delivery, while an unexplained or conflicting tag still holds reconciliation.
-After successful candidate publication/readback, end the main quiet period and leave publication enabled for normal reviewed main merges.
-After enablement, reviewed main merges automatically use GitVersion to publish normal releases.
-An owner can disable publication again without removing PR validation.
-No independent handwritten version counter or permanent per-release manual approval is added.
-The component feature covers reusable source, verified fixtures and release automation.
-Run its final independent implementation review and complete gate on the claimed feature branch after pre-release proof, then integrate that complete source through its single reviewed PR.
-Because the original real-pilot AC-06 is transferred to Lab, that PR uses `Refs #1`.
-The source spec is complete at that integration, while first-release delivery remains separately reported and issue 1 remains open until delivery verification.
-Every code-bearing push and PR follows the pinned whole-delivery skip policy: code, tests or workflows anywhere in the outgoing range require normal CI, even when the final commit changes only metadata.
-Keep skip markers out of that delivery’s pushed/merge messages and verify the outgoing range and full PR diff before integration.
-A pure feature-document push remains separately eligible to skip CI.
-No component post-merge evidence commit or second implementation PR is required by this feature.
-
-After the separate first-release approval, read back the real tag, peeled source and release, and exercise an external caller at that released SHA under a fresh fixture grant if earlier credentials have been retired.
-The private Lab rollout task/evidence history and its maintained VitePress operating record retain those delivery readbacks, rendered caller fixture revision and actual run, distinguishing them from Lab production activation.
-Link the verified public release and the Lab tracker in the component issue’s short delivery update, then close issue 1 after release checks pass.
-If a delivery check fails, keep issue 1 open with the precise unmet check and the Lab dependency on hold.
-A source defect follows the normal issue/spec/review path as a linked repair to the completed component; its later reviewed release must pass delivery checks before adoption.
-Preserve failed evidence and existing tags, and keep the completed source feature’s historical result intact.
-The generic example template remains stable because the released-SHA example is rendered only in the fixture.
-A verified release for Lab access means that tag/source readback, released-SHA fixture consumption and all fixture-key retirement are complete.
-Lab’s real-repository installation grant and production key come after that whole sequence.
-After production access exists, later fixture sessions use a separately approved fixture-only App; they never generate a caller-fixture key for the production App.
-
-The existing [Lab rollout](https://github.com/vhco-pro/lab/issues/3) owns production App/environment settings, the real three-repository allowlist, private local configuration checks, updater handover and observed updates or already-current evidence.
-It consumes the first verified release and proceeds under its own reviewed deployment spec and concrete grants.
-The original component AC-06 remains unticked with that owner-approved scope-transfer tracker.
-A reviewed source revert restores prior central behavior and an external caller can restore its prior immutable pin.
-Keep separate schedule/manual caller files so disabling scheduling leaves an owner-controlled recovery entry point.
-An operational stop disables scheduling and revokes the production key through the Lab procedure, leaving existing dependency PRs under normal review. [Shared delivery](https://github.com/vhco-pro/docs/blob/0c983f6793bfe35eb96ae95ad0c361c6200af44f/knowledge/shared-delivery.md)
+Complete this source feature after focused checks and a current independent implementation review, then integrate its one owner-reviewed PR with `Refs #1`.
+Keep issue 1 open through actual first-release readback; Lab owns the integration smoke and real pilot.
+A delivery failure stays visible and blocks adoption; a source defect follows a reviewed repair without rewriting the completed source feature's history.
+Code-bearing deliveries run normal public CI. Pure feature-document pushes may skip CI under the shared rule; mixed deliveries cannot use that marker.
 
 ## Acceptance Criteria
 
-- [ ] AC-01: The central public Linux scheduler configuration and checked examples use the pinned official action and Renovate image through the reusable workflow, with execution verified on owned fixtures.
-- [ ] AC-02: Native environment restrictions protect the App key, and scoped privileged execution reaches only approved targets with automatic merging disabled.
-- [ ] AC-03: Normal and failing private-target runs preserve the selected diagnostic boundary while public target names remain permitted.
-- [ ] AC-04: Real update fixtures produce complete valid dependency changes for supported managers, with synthetic public custom-manager coverage and real Lab verification kept local.
-- [ ] AC-05: Normal multi-target execution obeys native per-repository limits, while token failure, timeout, concurrency and retry have observable outcomes and tested recovery, with working owner notifications and health checks.
+- [x] AC-01: The central public Linux callers and checked examples use the pinned official actions and image through the defining-source reusable workflow.
+      Evidence: R-25 at 1d95e0648efeb28aaa2fcf4edd54eaeb575ce4ac returned met after direct checks/source inspection and public CI 44265792145. Its exact execution and limits are preserved below.
+- [x] AC-02: The integration rejects unsupported caller/implementation identities, debug settings and out-of-policy target selection before requesting the explicitly scoped App token, with deployment custody requirements documented.
+      Evidence: R-25 at 1d95e0648efeb28aaa2fcf4edd54eaeb575ce4ac returned met after direct checks/source inspection and public CI 44265792145. Its exact execution and limits are preserved below.
+- [x] AC-03: The real command entry point discards private stdout/stderr while preserving success/failure, and its workflow wiring retains the private temporary-storage and environment boundary.
+      Evidence: R-25 at 1d95e0648efeb28aaa2fcf4edd54eaeb575ce4ac returned met after direct checks/source inspection and public CI 44265792145. Its exact execution and limits are preserved below.
+- [x] AC-04: The pinned native image validates the runner's configuration and extracts the supported synthetic dependency formats; actual target compatibility remains an adoption check.
+      Evidence: R-25 at 1d95e0648efeb28aaa2fcf4edd54eaeb575ce4ac returned met after direct checks/source inspection and public CI 44265792145. Its exact execution and limits are preserved below.
+- [x] AC-05: Native rate/concurrency/cadence controls and disable/retry behavior are wired and documented, with locally executable health commands that reject disabled, stale or unreadable state.
+      Evidence: R-25 at 1d95e0648efeb28aaa2fcf4edd54eaeb575ce4ac returned met after direct checks/source inspection and public CI 44265792145. Its exact execution and limits are preserved below.
 - [ ] AC-06: Every approved pilot has verified updater ownership and processing evidence through a valid dependency PR or an observed already-current result, with its remaining policies preserved.
       Residual: https://github.com/vhco-pro/lab/issues/3
-      The owner transferred real pilot adoption to the existing Lab rollout on November 17. This component does not claim that adoption has occurred.
-- [ ] AC-07: Shared GitVersion pre-release versioning, local and reviewed-immutable-reference external invocation and disable/recovery procedures are verified, with automatic release behavior tested before the separately approved first publication.
+- [x] AC-07: The shared GitVersion caller preserves tests-first, dry-run/default-off, exact-source and manual/automatic release controls, with documented source-identity and recovery checks.
+      Evidence: R-25 at 1d95e0648efeb28aaa2fcf4edd54eaeb575ce4ac returned met after direct checks/source inspection and public CI 44265792145. Its exact execution and limits are preserved below.
 
 ## Test Plan
 
 | Criterion | Proof |
 | --- | --- |
-| AC-01 | Locally run actionlint, native configuration validation, example-interface checks and the pinned full-image/container fixture. Confirm bundled tool inventory, non-root temporary-mount writes and manager availability. Static checks compare both real central callers with the reusable-job interface. Check that the reusable workflow orchestrates actions and its internal helper owns runtime scripts. Assert caller policy checkout precedes implementation checkout at fixed sibling paths, both disable credential persistence, and the native-SHA HEAD comparison immediately precedes the local action step. Connected tests run the exact reviewed reusable workflow and external example from the manual-only public caller fixture after reading repository visibility and the standard runner label from job metadata. |
-| AC-02 | Locally reject wrong organizations, unlisted targets, invalid modes and unsupported callers before token creation. In approved connected fixtures, remove the non-main YAML guard and verify environment denial. Read back exact installation/permission scope and token inputs, probe granted/denied API operations and token revocation, then verify direct App main-push denial on the protected public caller fixture. Generate the native-required replacement key, discard its protected temporary PEM and record fingerprint/removal. Revoke the active key, observe rejected JWT authentication while its protected secret still exists, then delete the secret and remove fixture access with independent readbacks. Real-runner main denial belongs to Lab. Use tests/operations.test.mjs to statically verify the covered docs/operations.md post-merge sequence assigns release-readback, released-SHA consumption and final fixture-key retirement to Lab before real grants; Lab observes that ordering at delivery. Later fixtures require their own fixture-only App. Synthetic repository commands/scripts must never run. |
-| AC-03 | Locally execute the pinned action/container with invented private canaries in manifests, invalid configuration and simulated credential errors. After connected-test approval, repeat using owned private fixtures and inspect actual public logs, summaries and artifact inventory. Assert canaries/contents/credentials absent, target names allowed, preserved exit codes and debug rejection before token generation. |
-| AC-04 | Under connected-test approval, use the private GitHub fixtures for real branch updates of action/image pins, Bun plus bun.lock, Composer plus composer.lock, Go plus go.sum, an OpenTofu provider plus .terraform.lock.hcl and the synthetic custom manager. Validate resulting files with native checkers in the pinned full image. Local tests validate extraction/configuration only. Actual Lab custom-manager extraction remains a Lab rollout check with private local evidence. |
-| AC-05 | Connected GitHub fixtures prove two targets each receive their ordinary allowance, a third ordinary commit is held within the hourly period, and conflicting target schedules cannot block manual or delayed runs. Cover security/manual exceptions, three overlapping manual caller-fixture runs of the real reusable job with both queued requests retained, termination after branch creation and PR reuse on retry. Verify that one invalid target fails the aggregate job while another is processed, an uninstalled listed target fails token setup without target changes, and a forced timeout preserves earlier changes and permits a selected later-target retry. Verify owner notification and exercise disabled/stale and cancelled-run health checks. |
-| AC-06 | Owner-approved transfer to Lab issue 3. Lab verifies production scope, full dry-run, update PR or successful already-current processing, prior updater handover and private local checks. Preserve this criterion as an unmet transferred obligation rather than claiming fixture proof satisfies real adoption. |
-| AC-07 | Calculate the component version through the pinned tag action in contents-read dry-run. Under the explicit contents-write fixture grant, run the pinned shared workflow on the caller fixture’s own history with dry-run fixed true, checking nonempty version, tagged false, empty tag/release-url and unchanged refs/releases. Verify native source binding, the fixed sibling checkout paths/order, pre-local-action HEAD check and github.action_path script use; reject malformed identity before token creation. Local controlled main-head reads and a stub publisher test current-A eligibility and failure before publisher invocation when superseded by unpublished B, failed B, published B or skip-CI documentation D. For a current run A, prove a publishing dispatch with approved expected SHA B, missing SHA or malformed SHA cannot invoke the stub publisher, and matching approved A can. Execute positive preflight cases: enabled automatic main push with no dispatch inputs reaches the publishing stub, enabled dry-run dispatch with empty/malformed/mismatched expected-sha reaches only the non-publishing path, and disabled publication with dispatch dry-run=false and no SHA remains non-publishing. Verify the failed-job notification and release.yml current-main dispatch with dry-run=false and expected-sha. Check the native boolean default and enabled main/manual input mapping. Static workflow checks cover tests-first dependencies, workflow-level queue settings, initial dry-run and enabled-main wiring. Connected release dry-run proves the pinned interface; release-caller queue wiring is a static check. Run tests/operations.test.mjs against covered docs/operations.md for generic health commands, the exact tag/run/caller SHA and review/integration/release ancestry-plus-covered-content identity rule, generic placeholder commands with actual results assigned to Lab/VitePress, existing-tag treatment, first-enablement ordering (hold main, verify approved head and all existing run statuses completed, enable, dispatch, retain hold through readback), and failed-first-attempt recovery. Reject fixtures that check before the hold or after enablement; reject each non-completed/unknown run status and incomplete run-list reads. Verify failure handling disables publication and keeps the main hold until the failed run completes before reading its final result/tag/release state. Reject fixtures that read before completion or lift the hold for a repair before verifying publication is disabled. Verify retry repeats the first sequence and same-candidate tag completion requires the approved current-main SHA. Exercise the owner-selected orphan path: preserve the superseded tag as undelivered and require its tag, peeled source, failed run and disposition in both the Lab delivery record and component issue 1. Require the renewed first-release approval to identify the repaired candidate, its refreshed review/integration/source-identity mapping and the retained abandoned tag. Let shared GitVersion calculate the next tag without publishing the failed candidate. Reject fixtures missing either record location, omitting the retained tag or refreshed source mapping from approval, or hand-setting the replacement version. Reject tag movement/deletion/reuse and unexplained conflicting tags. Verify the switch to ordinary current-head recovery occurs at successful initial tag/release readback, including the window before Lab external-caller/fixture-retirement verification; verify post-release fixture retirement ordering; actual tag/source comparison is executed and recorded by Lab after first-publication approval. Exercise disable/revert controls. |
+| AC-01 | Run actionlint, structured caller/example-interface tests and the pinned native-image fixture. Inspect official action pins, sibling checkout order, disabled persisted credentials, native SHA comparisons immediately before the local helper and github.action_path script paths. Record actual public CI at the reviewed source. No separate public caller is needed. |
+| AC-02 | Execute policy tests refusing wrong organization/subset/mode/caller/SHA/debug values. Inspect the official token-action inputs and explicit permission subset. Document main-only secret custody, App scope and zero-private-minutes setup readbacks for Lab. Actual App authorization and direct-main restrictions are checked during deployment rather than by a separate platform-certification suite. |
+| AC-03 | Execute the real shell wrapper with synthetic successful/failing processes and a native Renovate error, asserting empty streams and unchanged exit status. Inspect official action command-file wiring, selected environment, Docker socket exclusion, owned mode-0700 working child and cleanup. Exercise the host config-stat/container-read boundary using the action’s own small storage-layout function, shared by prepare.mjs and the native verifier. Run prepare.mjs in a controlled local fixture and check its ownership targets; structured action checks must bind the child work-dir as /tmp, the parent-level config-file separately and the parent private-dir to cleanup. The the old image-owned parent must fail host stat and the repaired parent must permit it without widening data access. Lab's staged smoke must check actual outer-action logs/summaries/artifacts/caches before real private targets; no component proof claims that live observation has occurred. |
+| AC-04 | Run native strict validation for generated global and repository policies, including an invalid-policy rejection, plus extraction of the existing invented manager formats and both tool pins. Record actual non-root image tool inventory and writable temporary mount. The native test fails on missing prerequisites. No real update/lockfile matrix across upstream managers is required. |
+| AC-05 | Inspect native force settings, twice-daily cron, shared native concurrency group and inactive/default-off controls. Test the generic sequence in docs/operations.md through tests/operations.test.mjs: first read back target Actions disabled and stop without writing on failure, before every seed/target write and write dispatch, including retries; then disable/read back schedule.yml before permitting the one-off manual write; on success or failure reset the flag, disable/read back both entries and drain runs before repair or access cleanup; retry repeats setup. The operational-pause procedure resets and reads back RENOVATE_ENABLED=false before disabling both entries. Execute documented health commands against healthy, inactive, stale, failed/malformed API fixtures. GitHub/Renovate queue, hourly limit, interruption and notification internals are trusted platform behavior; Lab observes its rollout without a stress suite. |
+| AC-06 | The owner previously transferred real pilot adoption to Lab issue 3. Keep this criterion unticked with an owner-approved residual after renewed acceptance. Lab owns the single target smoke, zero-private-CI readback, real-repository grants and handover. Fixture/source checks cannot satisfy real adoption. |
+| AC-07 | Run release-mode/current-main guard tests and structured tests-first/default-off/manual-expected-SHA/automatic-main wiring checks against the pinned shared publisher interface. Execute the documented first-enable checks with completed, non-completed, unknown, incomplete and failed-read fixtures before any write. Inspect exact tag/run/review/integration identity comparisons and initial failure/orphan/current-head recovery instructions. tests/operations.test.mjs must verify that the release identity diff in docs/operations.md lists exactly the covers paths, including package.json. During independent review, compare the release/smoke procedures with Design to confirm that removed synthetic-caller, key-retirement, extra-App and per-manager connected prerequisites are absent; this is a source inspection rather than a free-text pattern gate. Actual first shared version calculation, tag/release readback and source identity are recorded during separately approved delivery; no extra release-fixture repository or tag mutation is required before source integration. |
+
 
 ## Tasks
 
-- [ ] T1 `tests/policy.test.mjs` - write executable preflight tests for caller identity, allowlist/organization, selected mode, debug rejection and forced limits; observe failure while the action preflight is absent (AC-01, AC-02, AC-03).
-- [ ] T2 `.github/actions/renovate/scripts/`, `config/` - implement the tested preflight and generated native Renovate configuration without credentials in outputs; the T1 cases pass (AC-01, AC-02, AC-03).
-- [ ] T3 `tests/workflows.test.mjs`, `tests/privacy.test.mjs` - add structured workflow/interface tests and real command exit/output probes that fail before the action and callers exist (AC-01, AC-02, AC-03, AC-05).
-- [ ] T4 `.github/actions/renovate/action.yml`, `.github/workflows/`, `examples/`, `package.json` - compose verified pinned official actions, exact caller/implementation checkouts, private temporary storage and the tested command entry point; local interface/privacy checks and actionlint pass with scheduling inactive (AC-01, AC-02, AC-03, AC-05).
-- [ ] T5 `tests/release.test.mjs`, `.github/actions/renovate/scripts/release-preflight.mjs` - observe failing release-mode/source-identity checks, then implement the bounded native-read preflight and pass automatic/manual/dry-run and source-moved cases (AC-07).
-- [ ] T6 `.github/workflows/release.yml`, `examples/` - wire the tests-first shared GitVersion release workflow with disabled-by-default publication, expected candidate and native concurrency; local checks and shared-action dry-run preparation pass without publication (AC-07).
-- [ ] T7 `tests/fixtures/`, `scripts/verify-local.mjs`, `tests/container.test.mjs` - verify the pinned full-image tool inventory, non-root temporary mount, native managers and private command behavior against synthetic inputs, retaining the original failures and actual native results (AC-01, AC-03, AC-04).
-- [ ] T8 `docs/operations.md`, `tests/operations.test.mjs`, `README.md`, `LICENSE`, `renovate.json`, `AGENTS.md` - add checked usage, native health/release/recovery procedures, repository checks and normal dependency policy; procedure/interface tests and native configuration validation pass (AC-01, AC-05, AC-07).
-- [ ] T9 `scripts/verify-connected.mjs`, `tests/fixtures/`, `examples/connected/` - persist the reproducible owned-fixture verification harness and its credential-free planning tests; it identifies exact resources, grants, commands and sanitized proof without creating remote resources (AC-01, AC-02, AC-03, AC-04, AC-05, AC-07).
-- [ ] T10 `scripts/verify-connected.mjs`, this document - after the separate concrete fixture grant, execute native App/environment, scope, manager update, queue, retry, timeout, public-output, notification and shared-release dry-run tests; record actual results and retire owned fixture credentials/access (AC-01, AC-02, AC-03, AC-04, AC-05, AC-07).
-- [ ] T11 `docs/specs/shared-renovate-runner.md`, reviewed implementation paths - obtain independent exact-source implementation review after required local and connected proof, resolve findings and run the complete gate; retain AC-06’s owner-approved Lab transfer and keep source integration, release and production adoption separate.
+Tasks T1 through T9 record the prior baseline and remain historical evidence. The owner-selected revision replaces its open connected-suite tasks with T12 and T13 below.
 
+- [x] T1 `tests/policy.test.mjs` - write executable preflight tests for caller identity, allowlist/organization, selected mode, debug rejection and forced limits; observe failure while the action preflight is absent (AC-01, AC-02, AC-03).
+  Evidence: `bun test tests/policy.test.mjs` on local Bun 1.4.3 exited 1 with the expected missing policy.mjs module, 0 pass and 1 fail. This is the initial failing baseline; matching the selected Bun 1.4.4 runtime remains pending.
+- [x] T2 `.github/actions/renovate/scripts/`, `config/` - implement the tested preflight and generated native Renovate configuration without credentials in outputs; the T1 cases pass (AC-01, AC-02, AC-03).
+  Evidence: the verified isolated Bun 1.4.4 runtime ran `bun test tests/policy.test.mjs`, reporting 34 pass, 0 fail and 45 assertions. The same test previously failed on the absent module. Native Renovate configuration/container and connected verification remain pending; no acceptance criterion is claimed met from these unit tests.
+- [x] T3 `tests/workflows.test.mjs`, `tests/privacy.test.mjs` - add structured workflow/interface tests and real command exit/output probes that fail before the action and callers exist (AC-01, AC-02, AC-03, AC-05).
+  Evidence: Bun 1.4.4 ran the two named test files and reported 0 pass, 6 fail. The failures were absent workflow/action files and absent command entry point (exit 127), before implementation.
+- [x] T4 `.github/actions/renovate/action.yml`, `.github/workflows/`, `examples/`, `package.json` - compose verified pinned official actions, exact caller/implementation checkouts, private temporary storage and the tested command entry point; local interface/privacy checks and actionlint pass with scheduling inactive (AC-01, AC-02, AC-03, AC-05).
+  Evidence: verified Bun 1.4.4 reported 40 pass, 0 fail and 96 assertions after the six observed T3 failures. `bun scripts/check-workflows.mjs` passed actionlint 1.7.12 with explicit narrow compatibility filters for documented GitHub.com job.workflow_* fields and concurrency.queue. An invalid-permission fixture still exited 1. Scheduling defaults inactive through the unset activation variable; no workflow is published or executed. Docker preparation, native container and actual hosted behavior remain pending. Manual documentation-impact review applies because committed AGENTS.md declares no coverage roots.
+- [x] T5 `tests/release.test.mjs`, `.github/actions/renovate/scripts/release-preflight.mjs` - observe failing release-mode/source-identity checks, then implement the bounded native-read preflight and pass automatic/manual/dry-run and source-moved cases (AC-07).
+  Evidence: Bun 1.4.4 first exited 1 on the absent release-preflight.mjs module, then reported 15 pass, 0 fail and 26 assertions after implementation. These are controlled source/mode checks with a publishing stub; the native main-read API and shared hosted publisher remain unexecuted.
+- [x] T6 `.github/workflows/release.yml`, `examples/` - wire the tests-first shared GitVersion release workflow with disabled-by-default publication, expected candidate and native concurrency; local checks and shared-action dry-run preparation pass without publication (AC-07).
+  Evidence: the new workflow test first failed on absent release.yml, then the workflow/release tests passed with 16 tests and 39 assertions on Bun 1.4.4. The shared workflow at the accepted immutable pin was read to verify inputs, outputs and permissions. The caller fixture's dry-run workflow is prepared with publication fixed false. Actual hosted execution, version calculation and ref/release comparisons still require T10's separate fixture grant.
+- [x] T7 `tests/fixtures/`, `scripts/verify-local.mjs`, `tests/native/container.test.mjs`, `.github/workflows/ci.yml` - verify the pinned full-image tool inventory, non-root temporary mount, native managers and private command behavior against synthetic inputs; prepare the same offline verification in public CI (AC-01, AC-03, AC-04).
+  Evidence: Bun 1.4.4 first failed on the missing helper, then the native prerequisite check failed while the exact image was absent. The first mounted run timed out with custom Podman keep-id; using native :U ownership for only the owned fixture volume reached the tools. The inventory then exposed an unsupported fixture assumption about a Terraform CLI, which this image does not supply; upstream Renovate performs Terraform lockfile work internally. The final assertion failure was the report key custom.regex, whose actual native key is regex. The corrected native suite passed 1 test and 17 assertions in 70.27 seconds; final source after separating image preparation passed again in 96.51 seconds. UID 12021 wrote the mode-0700 mount. Actual tools: Node 24.22.3, Bun 1.4.4, Go 1.27.4, PHP 8.5.12 and Composer 2.11.2. Native strict configuration validation accepted the generated policy and rejected badOption; seven managers extracted ten dependencies from seven invented files. An actual invalid-platform run retained its failing exit status with both streams discarded through the real command wrapper. All 56 fast tests and workflow lint passed. Public CI now explicitly prepares the pinned image before the offline test; hosted Docker and outer action privacy remain unverified. Manual documentation review found the README status stale and corrected it; no mechanical coverage check applies because committed AGENTS.md has no roots declaration.
+- [x] T8 `docs/operations.md`, `tests/operations.test.mjs`, `README.md`, `LICENSE`, `renovate.json`, `AGENTS.md`, adjacent workflow/checker fixtures - add checked usage, native health/release/recovery procedures, repository checks and normal dependency policy; procedure/interface tests and native configuration validation pass (AC-01, AC-05, AC-07).
+  Evidence: the five initial operations tests failed on absent docs/operations.md. The completed guide passes 20 procedure tests, including executed native shell/jq commands against invented API responses: healthy versus disabled/stale/no-success scheduling, failed/malformed reads, every non-completed/unknown release status and incomplete pagination before enablement writes. All 77 fast tests pass with 210 assertions on Bun 1.4.4; actionlint 1.7.12 passes and a mismatched installed-version fixture is rejected. The native image strictly validates the repository update policy; its actual regex manager discovers both tool-image pins plus the synthetic provider (three files/dependencies). The final native suite passed 19 assertions in 148.70 seconds, with 17 total dependencies extracted from ten files. Shared release v0.1.1 was independently peeled to the existing b18de6d pin, so its version comment is now tracked without changing execution identity. README links the detailed guide and uses Mermaid; LICENSE contains full Apache-2.0 text and VH & Co BV copyright. Gitleaks 8.21.2 found no leaks in the directory or seven implementation commits at the pre-commit observation. Manual documentation-impact review found no remaining usage mismatch; committed AGENTS.md declares no mechanical roots. Live notifications, App behavior and actual release remain unverified.
+- [x] T9 `scripts/verify-connected.mjs`, `tests/connected.test.mjs`, `examples/connected/` - persist credential-free fixture planning, an exact-source manual caller, native run/privacy readback and the versioned case procedure without creating remote resources (AC-01, AC-02, AC-03, AC-04, AC-05, AC-07).
+  Evidence: the new test first failed on the absent verify-connected.mjs module. The resulting 23 connected-helper tests pass with 39 assertions, including executing the actual read-only CLI against controlled native-shaped responses for success, leaked logs/check output, incomplete pagination and API failure. The plan names only the fixture App and three repositories, renders an immutable remote workflow and discloses permissions plus native dispatch/readback commands. Rendered integration.yml passes actionlint. All 100 fast tests pass with 249 assertions. The helper binds caller/run/proof identity and GitHub referenced-workflow SHA, standard Linux labels, entry-point execution and empty artifact inventory; raw API/log errors remain unprinted. Browser summaries, notification delivery and target-local outcomes deliberately require additional native observations. The versioned matrix identifies the setup and manager/rate/queue/retry/timeout/release/retirement cases; any further native probe scripts join T10 before their execution. This is controlled planning/readback proof, not connected acceptance. Manual documentation review linked the procedure from operations and retained all authority and privacy boundaries.
+- [x] T12 `.github/actions/renovate/`, `scripts/verify-local.mjs`, `tests/native/container.test.mjs`, `tests/workflows.test.mjs`, `scripts/verify-connected.mjs`, `tests/connected.test.mjs`, `examples/connected/`, `examples/external/config/targets.json`, `config/targets.json`, `docs/operations.md`, `tests/operations.test.mjs`, `README.md`, `AGENTS.md` - remove superseded fixture scaffolding, fix the measured host config-stat access without widening private-data permissions, and align the single-target policy/docs; ordered smoke success/failure/retry procedure tests starting with the target Actions-disabled readback and stop-without-writing branch before any seed/target write, source inspection excluding removed external-caller/key/App/per-manager prerequisites, ordered flag reset/readback before pause, shared action storage-layout native regression plus real preparer ownership/output and action-wiring checks, the operations release identity diff matching exactly the covers paths including package.json (checked by tests/operations.test.mjs), native ownership regression, lint, secret scan and public CI pass (AC-01, AC-02, AC-03, AC-05, AC-07).
+  Progress: The five expected old-source failures are retained in /tmp/vhco-reduced-red.log: wrong mount, absent work-dir, incomplete release diff, absent smoke order and stale guide. Bun 1.4.4 now passes 80 tests with 258 assertions; actionlint 1.7.12 and the source Gitleaks scan pass. The offline shared-layout native test passes 22 assertions in 25.48 seconds, including old-parent EACCES, host config stat, image config read, strict policies, synthetic extraction and real failing-process output suppression. Public run 44262617237 passed on attempt one at ba57c33. R-23 independently met AC-02 and found the missing explicit stop/recheck wording in the smoke guide. The focused operations test then failed 20/1 before the guide repair. Its sandbox also lacked writable test scratch, readable CI-helper context and the remote default-branch mapping; those are reviewer-environment findings, not source changes. R-25 below supplies the repaired-source verification; live adoption remains pending in Lab. Manual docs-impact review aligned README, AGENTS, operations and the generic external example; committed AGENTS has no coverage-roots declaration. Live App/PR proof remains unobserved and belongs to Lab.
+- [x] T13 `docs/specs/shared-renovate-runner.md`, reviewed implementation paths - obtain independent exact-source implementation review and pass the source completion gate, retaining the owner-approved Lab adoption residual; live smoke, merge and release are separately reported (AC-01, AC-02, AC-03, AC-04, AC-05, AC-06, AC-07).
+
+  Evidence for T12/T13: R-24’s two positive fixture failures were reproduced in the read-only review context. Scoped child TMPDIR, explicit Bash/jq prerequisites, stderr diagnostics and expected rejection outcomes repaired the ambiguity. Final Bun 1.4.4 checks report 80 pass/276 assertions; native public CI reports 22 assertions. Public run 44265792145 passed attempt one, and R-25 returned six met plus the accepted AC-06 adoption residual, with no additional findings. Gitleaks and workflow lint passed. The source completion gate passed (rules 1, docs 0c983f6); merge, first release and live setup remain separate.
 
 ## Open Questions
 
@@ -449,6 +311,16 @@ None.
 | 2026-11-17 | R-15 | spec | `728af36869ffa8afd753182671c62902a5d638ec` | claude-opus-5-5 | procedural | One factual should-fix and one factual nit; first-party Opus assistant attested, source/Git preserved; reviewer Bash denied. |
 | 2026-11-17 | R-16 | spec | `0f04733032f579f54a79d7b37666857f0294e3c9` | claude-opus-5-5 | procedural | NO FINDINGS; first-party Opus assistant attested, source/Git preserved; reviewer Bash denied and runtime checks unexecuted. |
 | 2026-11-17 | R-16 | spec | `0f04733032f579f54a79d7b37666857f0294e3c9` | n/a | n/a | accepted by owner |
+| 2026-11-18 | R-17 | spec | `d6a1ac414334b5a1fa763656010807f43ae845d4` | claude-opus-5-5 | structural | Five should-fix findings and two nits; first-party model attested, original/clone/companion snapshots preserved under read-only mounts; lint/fresh/gate observed, other checks partly denied. |
+| 2026-11-18 | R-18 | spec | `c890f15e166e5dc28e8f597c9573ab3769105233` | claude-opus-5-5 | structural | Three should-fix findings and one nit; first-party model attested and read-only snapshots matched; lint/fresh/gate/next observed, no native execution or live checks. |
+| 2026-11-18 | R-19 | spec | `b76a3d1608a5b29bb487ef3f8c69443d3d1004d5` | claude-opus-5-5 | structural | Two factual should-fix findings and one nit; exact read-only Opus review, CLI limits retained. Non-record dispatcher context remains byte-exact below its separator. |
+| 2026-11-18 | R-20 | spec | `a8485e4c7226ad267b6b37347ad9660a67807f95` | claude-opus-5-5 | structural | Two should-fix findings on regression coverage and one factual review-log nit. |
+| 2026-11-18 | R-21 | spec | `74150636ee0e91696d887519994ea4efc3e6cec1` | claude-opus-5-5 | structural | Two should-fix findings on runtime-layout regression and prose checks, plus one ordering nit. |
+| 2026-11-18 | R-22 | spec | `aa438fe79efe41ee81b264b73fd769e3660fa8c9` | claude-opus-5-5 | structural | One factual typo nit only; no should-fix or blocking findings; native/runtime proof remains implementation work. |
+| 2026-11-18 | R-22 | spec | `aa438fe79efe41ee81b264b73fd769e3660fa8c9` | n/a | n/a | accepted by owner |
+| 2026-11-18 | R-23 | implementation | `ba57c337229642921f54d5b687e9fe87e775553e` | claude-opus-5-5 | structural | AC-02 met; AC-05 not met; AC-06 untested; others unverified due scratch/CI evidence limits. One procedure repair, one clone-default finding and one Context nit. |
+| 2026-11-18 | R-24 | implementation | `b0f5c431826f657a35aeb144fe7630f3dfeda0fa` | claude-opus-5-5 | structural | AC-02 met; AC-06 untested; other criteria unverified because of read-only scratch/cache constraints. One should-fix on operation-test prerequisites and diagnostics. |
+| 2026-11-18 | R-25 | implementation | `1d95e0648efeb28aaa2fcf4edd54eaeb575ce4ac` | claude-opus-5-5 | structural | AC-01/02/03/04/05/07 met; AC-06 untested under the owner-approved Lab residual. No additional findings; first-party Opus, read-only preservation, direct fast checks and complete public native CI log observed. |
 
 ### R-1
 
@@ -1004,6 +876,294 @@ PROPOSAL: Reduce Open Questions to "None." and rely on the folded Design text an
 
 NO FINDINGS
 
+### R-17
+
+FINDING: F-01
+KIND: factual
+SEVERITY: should-fix
+WHERE: Design, Central workflow and policy ownership (line 82); Design, Staged integration smoke in Lab (lines 161 and 166); Context, Owner summary (lines 28 and 37 to 38); Test Plan row AC-05; Tasks T12 (line 261)
+EVIDENCE: Line 82 says "`RENOVATE_ENABLED` defaults false, keeping recurring updates inactive until Lab's approved rollout." Line 161 requires "an explicitly authorized write run producing one valid dependency PR", and line 166 says "The schedule remains disabled during the smoke." In the tree, `.github/workflows/manual.yml:20` runs the job only when `inputs.mode == 'full' || vars.RENOVATE_ENABLED == 'true'`, and `.github/workflows/schedule.yml:9` gates the cron on the same `vars.RENOVATE_ENABLED == 'true'`, with `mode: write` (line 14) and cron `23 5,17 * * *` (line 4). So the variable also gates manual writes, which the document never says. The smoke's write run needs `RENOVATE_ENABLED=true`, and that also arms the twice-daily write-mode schedule over the whole committed policy, unless the operator separately disables `schedule.yml` (the pause mechanism in docs/operations.md:92). The document does not say whether the smoke disables the schedule workflow while the variable is true, adds a separate manual-write switch, or changes manual.yml. T12 does not list manual.yml or schedule.yml. One implementer keeps the variable false as line 82 suggests and cannot make the smoke's write. Another sets it true and leaves the schedule live, against line 166. The AC-05 row ("inactive/default-off controls") and tests/workflows.test.mjs:35 pass either way. This comes from the November 18 revision, which added the smoke's manual write with the schedule disabled. Checks run: read the reviewer agent file, the pinned conventions/feature-documents.md from the docs cache at 0c983f6, the repository AGENTS.md, the whole document, the workflows, the action, policy.mjs, prepare.mjs, renovate-command.sh, config/targets.json, docs/operations.md, tests/workflows.test.mjs, the targeted test greps and the Lab plan docs/internal/plans/opnsense-encrypted-backup.md lines 200 to 239. `vh-adlc lint` returned pass. `vh-adlc fresh` reported R-16 at 0f04733 as stale (baseline-changed, covered-drift) and no implementation review. `vh-adlc gate planned` failed on spec_review_fresh, accepted and on_feature_branch_if_set (the clone is on a detached HEAD). `git rev-parse HEAD` gave the target commit. Limitations: Bash calls were denied for reading the docs cache with cat, for running fresh, gate and next together, and for `git show`/`git branch` combined in Lab. `vh-adlc next`, `vh-adlc review check`, `bun run test`, `bun run check:workflows`, the native suite, `gh` and web fetches were not run. The historical CI run 44190212437 and Lab issue 3 were not observed. No source, ref, provider, App, credential, issue, CI run or release was changed.
+PROPOSAL: State how the smoke makes its manual write while the schedule stays off: for example, set `RENOVATE_ENABLED=true` only after `schedule.yml` is disabled and read back as disabled, or add a separate manual-write switch. Put that control in the AC-05 proof and in the operations guide task.
+
+FINDING: F-02
+KIND: factual
+SEVERITY: should-fix
+WHERE: Design, Staged integration smoke in Lab (lines 160 to 162); Context, Owner summary (line 32); Design, Central workflow and policy ownership (lines 100 to 101); Test Plan rows AC-03 and AC-06
+EVIDENCE: Line 160 seeds only "one representative package manifest/lockfile pair and an invented private canary", and line 161 expects the write run to produce "one valid dependency PR". The generated global configuration in `.github/actions/renovate/scripts/policy.mjs:71-94` sets no `onboarding` or `requireConfig` value, and a search of the tree outside docs/specs finds neither key. Under Renovate's default onboarding behaviour, an unconfigured repository first gets a configuration onboarding PR, not a dependency PR, and the full dry-run reports onboarding. The document does not say whether the seed includes a repository Renovate config, whether the owner merges an onboarding PR first, or whether the global config turns onboarding off. Each choice writes different things to the private target and gives a different first PR. One implementer seeds a config file; another sees an onboarding PR and records the smoke as failed or passed on the wrong PR. Checks run and limitations: as in F-01. The onboarding default comes from Renovate's documented behaviour and was not re-fetched in this pass.
+PROPOSAL: Say whether the seed includes a committed repository Renovate config (and which one), or name the onboarding PR as an expected intermediate step with its merge authority. Make the smoke's pass condition the dependency PR that follows.
+
+FINDING: F-03
+KIND: judgement
+SEVERITY: should-fix
+WHERE: Design, Staged integration smoke in Lab (line 163); Design, Private output and failure handling (lines 135 to 138); Context, Owner summary (line 32); Test Plan row AC-03
+EVIDENCE: Line 163 says "Exercise a controlled configuration/process failure and confirm nonzero propagation with private output still suppressed." Line 138 says the smoke inspects public output "on both normal and controlled failure paths". The document does not name the failure or how it is caused on the live central runner without changing reviewed source. A failure caused by an off-policy `repositories` input, a debug setting or a bad client ID stops in `prepare.mjs` (lines 30 to 48 and 67 to 69) or in the token step. It never reaches `renovatebot/github-action` or the `renovate-command.sh` wrapper, so it proves nothing about the outer action's stdout/stderr handling, which the AC-03 row says only the Lab smoke can observe. A failure caused by an invalid repository config in the target is a different write to the private fixture, and Renovate may report it through an issue rather than a nonzero process exit. Two implementers would exercise different paths, and the AC-03 row's "outer-action logs/summaries/artifacts/caches" check passes on a preflight-only failure. Checks run and limitations: as in F-01.
+PROPOSAL: Name the controlled failure and require it to fail inside the official action's Renovate process, for example by stating what the target or dispatch input is and what nonzero step it must produce. Add that pass condition to the AC-03 row.
+
+FINDING: F-04
+KIND: factual
+SEVERITY: should-fix
+WHERE: Design, Staged integration smoke in Lab (line 169); Design, Central workflow and policy ownership (lines 83 to 84); Context, Owner summary (line 41); Tasks T12 (line 261)
+EVIDENCE: Line 169 says "After the smoke, remove the disposable target from policy and installation access". Line 84 makes `vhco-pro/renovate-fixture-a` the only policy entry, and real targets need a separate concrete grant (line 42 and line 175). `.github/actions/renovate/scripts/policy.mjs:46` rejects a policy whose `repositories.length === 0` ("Invalid trusted target policy"). So removing the only target, as written, leaves a committed `config/targets.json` that every scheduled or manual run rejects. The document does not say whether the removal waits for, or ships with, Lab's real target list, or whether an empty policy becomes a supported inactive state. That removal is itself a covered-path main merge, which releases automatically while `RELEASE_ENABLED` is true (line 207). Today `config/targets.json:4-5` also still names `renovate-fixture-b`; T12 plans that alignment. Checks run and limitations: as in F-01.
+PROPOSAL: Say what the policy holds after the smoke: either the removal is combined with Lab's approved real-target change, or an empty policy is an explicit inactive state that the preflight and tests accept. State whether that change is expected to produce a release.
+
+FINDING: F-05
+KIND: judgement
+SEVERITY: should-fix
+WHERE: Tasks T12 (line 261); Open Questions (line 266); Context, Owner summary (lines 31 to 34); Scope (line 73)
+EVIDENCE: The repository AGENTS.md Verification section says "Read docs/operations.md for setup, evidence boundaries and the connected-test approval requirement" and "Do not substitute unit/static success for real App, update, queue, notification or released-caller proof." The revision drops queue, notification and released-caller proof (line 73, line 127, line 148 and lines 193 to 195), and T12 edits `AGENTS.md` to match. The reviewer instructions say a needed change to repository instructions is raised as an Open Question, never assumed. Open Questions says only "None for the source revision", and the Owner summary records the owner's November 18 direction about test scope, not approval of this instruction change. docs/operations.md:39, 151 and 184 to 195 and tests/operations.test.mjs:37-39 still require the external caller and fixture-key retirement that the revision removes. Checks run and limitations: as in F-01.
+PROPOSAL: Raise the AGENTS.md Verification change as an Open Question, or record the owner's explicit approval of the new wording, before T12 edits it.
+
+FINDING: F-06
+KIND: factual
+SEVERITY: nit
+WHERE: Tasks T12 (line 261); Design, Central workflow and policy ownership (line 98)
+EVIDENCE: Line 98 keeps the checked external example. `examples/external/config/targets.json:4-5` still names `vhco-pro/renovate-fixture-a` and `vhco-pro/renovate-fixture-b`, and the revision removes the second private fixture. T12 lists `examples/connected/` but not `examples/external/`. Checks run and limitations: as in F-01.
+PROPOSAL: Add `examples/external/config/targets.json` to T12, or use invented example names there.
+
+FINDING: F-07
+KIND: factual
+SEVERITY: nit
+WHERE: Open Questions (line 266)
+EVIDENCE: Open Questions reads "None for the source revision. The owner directed the smaller integration scope on November 18. Concrete live App/key/target setup remains part of the Lab rollout approval." The pinned feature-documents.md says an answered question "is folded into the document and removed" and that "None." means every question has been answered. The direction is already folded into Context and Design. R-15 F-02 raised the same pattern. Checks run and limitations: as in F-01.
+PROPOSAL: Reduce Open Questions to "None." once F-05 is settled.
+
+### R-18
+
+FINDING: F-01
+KIND: factual
+SEVERITY: should-fix
+WHERE: Frontmatter `covers` (lines 7 to 15); Design, Component release and source identity (line 199); Tasks T4 (line 256)
+EVIDENCE: `covers` lists `.github/workflows/`, `.github/actions/renovate/`, `config/`, `scripts/`, `tests/`, `examples/`, `renovate.json` and `docs/operations.md`, but not `package.json`. The feature's checks and release gate depend on that file. `package.json:4-9` sets `packageManager: bun@1.4.4` and defines the `test`, `test:native` and `check:workflows` scripts. `.github/workflows/ci.yml:20-29` installs Bun "from packageManager" and runs `bun run test`, `bun run check:workflows` and `bun run test:native`. `.github/workflows/release.yml:22-23` makes those checks the tests-first job, and `release.yml:35-36` runs the release preflight on the packageManager Bun. T4 (line 256) already names `package.json` as an implementation file. Line 199 says the release source is valid when "tracked contents over this feature's `covers` are unchanged from review", and `docs/operations.md:112` puts that diff into practice over the covers paths only. So a change to `package.json`, such as narrowing the `test` glob or changing the Bun version, leaves the identity diff, the `feature_tree_clean` condition and `vh-adlc fresh` covered-drift all passing while the AC-07 tests-first control and the AC-01 to AC-05 proofs run something different from what was reviewed. The previously accepted baseline has the same gap, so this revision did not introduce it. Checks run: read the reviewer agent file, the pinned `conventions/feature-documents.md` from the docs cache at 0c983f6, AGENTS.md, CLAUDE.md, `.github/copilot-instructions.md`, the whole document including R-17, `git diff d6a1ac4 c890f15` (only the document changed), all workflows, the composite action, policy.mjs, prepare.mjs, renovate-command.sh, config/targets.json, examples/external/renovate.yml, docs/operations.md, package.json and Lab `docs/internal/plans/opnsense-encrypted-backup.md` lines 80 to 239. `git rev-parse HEAD` matched the target, `git cat-file -t 8465955` returned commit, and `git status` was clean before and after. `vh-adlc lint` returned pass. `vh-adlc fresh` reported R-17 stale (baseline-changed), no implementation review and a clean feature tree. `vh-adlc gate planned` failed on spec_review_fresh, accepted and on_feature_branch_if_set (detached HEAD). `vh-adlc next` returned owner decision (rule 2, branch). Limitations: Bash was denied for listing and reading the docs cache through the shell (I read it with the Read tool instead) and for `bun run test`. `vh-adlc review check` was not run because it needs a records input file and file writes are not available to this reviewer. `bun run check:workflows`, the native suite, `gh`, web fetches, historical CI run 44190212437 and Lab issue 3 were not run or observed. No source, ref, provider, App, credential, issue, CI run or release was changed.
+PROPOSAL: Add `package.json` to `covers` so the release identity diff, the freshness checks and the feature-tree check include the runtime and test entry points that the release gate runs.
+
+FINDING: F-02
+KIND: judgement
+SEVERITY: should-fix
+WHERE: Test Plan row AC-05 (line 241); Design, Staged integration smoke in Lab (lines 168 to 173 and 180); Design, Recovery and scheduler health (line 156); Tasks T12 (line 268); AC-05 (line 229)
+EVIDENCE: This revision added to the AC-05 row: "Check that the smoke disables and reads back schedule.yml before setting the shared enable flag for a manual write, then disables both entries and resets that flag afterward." The smoke runs only in Lab after source integration (lines 160 and 218 to 219), so at the source implementation review the row can only check a written procedure. It does not say which one. Line 180 gives the procedure to "The Lab spec and its VitePress procedure". Line 156 says "The small operator guide owns these commands" only for pause, stop and revert. T12 edits `docs/operations.md` and `tests/operations.test.mjs` but does not say that the smoke activation order goes there. Today `docs/operations.md` has no such sequence (lines 84 to 97 cover only recovery and pause), while Lab plan lines 217 and 222 already state it. One implementer adds the order to `docs/operations.md` with a procedure test. Another adds nothing, and the reviewer passes AC-05 by reading the Lab plan, which is outside this component's covers and can change without making its review stale. This change was made in this revision in response to R-17 F-01. Checks run and limitations: as in F-01.
+PROPOSAL: Name the artifact the AC-05 row checks, for example a smoke activation and cleanup sequence in `docs/operations.md` that `tests/operations.test.mjs` asserts in order. Add that file and test to T12's done condition, or else say the row only checks a Lab artifact and name it.
+
+FINDING: F-03
+KIND: judgement
+SEVERITY: should-fix
+WHERE: Design, Staged integration smoke in Lab (lines 171 to 173 and 183); Context, Owner summary (line 42)
+EVIDENCE: Line 168 sets `RENOVATE_ENABLED=true` and enables `manual.yml` for the write. Line 171 says "On a failed check, stop manual processing, retain private diagnosis locally and fix the source/configuration through review before retrying." The cleanup at line 173 (disable manual.yml, reset `RENOVATE_ENABLED=false`, remove test-target App access) is stated only "After the smoke", and line 42 says the same. Line 183 then allows a repair that can take a full review and automatic release cycle before the smoke repeats. The document does not say whether a failed smoke resets the flag, disables `manual.yml` and removes the fixture App selection while that repair is pending, or leaves them armed for the retry. While the flag is true, `manual.yml:20` admits write dispatches, and `schedule.yml:9` writes again as soon as anyone re-enables that workflow, which the document says the trusted App can do (line 153). "Stop manual processing" can mean draining the current run or disabling the entry point. Two operators would leave different live state through the repair window. This failure path was added in this revision. Checks run and limitations: as in F-01.
+PROPOSAL: State that a failed smoke applies the line 173 cleanup (or at least disables `manual.yml` and resets `RENOVATE_ENABLED=false`, with readbacks) before the repair starts, and that a retry repeats the line 168 order from the beginning.
+
+FINDING: F-04
+KIND: factual
+SEVERITY: nit
+WHERE: Design, Staged integration smoke in Lab (lines 173 and 178); Context, Owner summary (lines 38 and 42)
+EVIDENCE: The document calls the target "one disposable private target" (line 38). Line 178 says only that "no existing repository or workload is deleted", so it never says what happens to `vhco-pro/renovate-fixture-a`, its dependency PR or its Actions setting after the smoke. Lab plan line 144 decides this: "Keep the test repository and its synthetic PR for review/evidence after retiring its App access; deletion needs separate approval" and "The zero-private-CI policy keeps Actions disabled after smoke or rollback". Nothing in the component changes, because Lab owns the live steps, but "disposable" reads as a deletion that Lab says needs separate approval. Checks run and limitations: as in F-01.
+PROPOSAL: Add one sentence saying the fixture repository and its PR are retained with Actions still disabled, and that deletion needs separate approval, matching the Lab plan.
+
+### R-19
+
+FINDING: F-01
+KIND: factual
+SEVERITY: should-fix
+WHERE: Frontmatter `covers` (lines 7 to 16); Design, Component release and source identity (line 207); Test Plan row AC-07 (line 251); Tasks T12 (line 276)
+EVIDENCE: This revision added `package.json` to `covers` in response to R-18 F-01. That finding's proposal was aimed at the release identity diff. Line 207 says the release source is valid when "tracked contents over this feature's `covers` are unchanged from review". The command that puts this into practice, `docs/operations.md:112`, still diffs only `.github/workflows/ .github/actions/renovate/ config/ scripts/ tests/ examples/ renovate.json docs/operations.md` and leaves out `package.json`. T12 edits `docs/operations.md`, but its done condition lists only smoke procedure tests, the native ownership regression, lint, secret scan and public CI. The AC-07 row says only "Inspect exact tag/run/review/integration identity comparisons". So an implementation could keep the stale path list, and AC-07 would still pass while a change to the Bun version or test scripts in `package.json` goes unnoticed between review and release. Checks run: read the reviewer agent file, the pinned `conventions/feature-documents.md` (with the Read tool, from the docs cache at 0c983f6), AGENTS.md, the whole document including R-17 and R-18, and `git diff c890f15 b76a3d1` (only the document changed). Also read `.github/actions/renovate/action.yml`, prepare.mjs, cleanup.mjs, renovate-command.sh, renovate.yml, manual.yml, config/targets.json, examples/external/config/targets.json, docs/operations.md, a grep of tests/ and scripts/ for ownership and mount assertions, and a grep of the Lab plan `docs/internal/plans/opnsense-encrypted-backup.md` for the smoke steps. `git rev-parse HEAD` matched the target and `git status --short` was clean. `vh-adlc lint` returned pass. `vh-adlc fresh` reported R-18 at c890f15 stale (baseline-changed), no implementation review and a clean feature tree. `vh-adlc gate planned` failed on spec_review_fresh, accepted and on_feature_branch_if_set (the clone is on a detached HEAD). `vh-adlc next` returned owner decision (rule 2, branch). Limitations: Bash was denied for reading the docs cache through the shell, for printing the remaining workflows and package.json together, and for `bun run test`. `vh-adlc review check` printed only a usage result for `--help` and was not run on records. `bun run check:workflows`, `git diff --check`, the native suite, `gh`, web fetches (including the pinned github-action `src/renovate.ts`), historical CI run 44190212437 and Lab issue 3 were not run or observed. No source, ref, provider, App, credential, issue, CI run or release was changed.
+PROPOSAL: Add to T12's done condition, and to the AC-07 row, that the release identity diff in `docs/operations.md` covers exactly the `covers` paths, including `package.json`, and that `tests/operations.test.mjs` checks this.
+
+FINDING: F-02
+KIND: factual
+SEVERITY: should-fix
+WHERE: Context, Owner summary (lines 32 to 35 and 55); Design, Authentication and execution (lines 130 to 133); Test Plan row AC-03 (line 247); Tasks T12 (line 276)
+EVIDENCE: Line 55 says "This revision changes verification and rollout prerequisites, not the selected runtime permission set or release controls." But this revision also changes runtime source. Lines 131 to 133 replace the private storage layout with a host-owned parent, an image-owned working child and a separate config file bind. T12 now edits `.github/actions/renovate/` to "fix the measured host config-stat access". In the tree, `prepare.mjs:53-58` writes the config inside the run directory, sets that directory to mode 0700 and chowns it to the image UID. If the design is right, the currently implemented action fails host-side config validation before Docker starts, so the first live run would fail. The pinned convention says the summary must "Explain material changes since the last accepted scope" and must be refreshed before asking for acceptance. The summary never mentions this defect or its repair, so the owner would accept believing the action source is unchanged apart from verification. This change was made in this revision. Checks run and limitations: as in F-01.
+PROPOSAL: Add one or two sentences to the Owner summary: the accepted layout fails the official action's host-side config check, the revision changes the private storage layout to fix it without widening data access, and the native regression proves it locally.
+
+FINDING: F-03
+KIND: factual
+SEVERITY: nit
+WHERE: Design, Authentication and execution (line 132); Sources (line 968)
+EVIDENCE: Line 132 says "A local owned-volume probe reproduced EACCES with the old image-owned parent, then verified host stat and container read with the separate-file bind layout." The pinned convention requires Design claims to cite "a `file:line`, or a command and its output, gathered when the claim was written". The document gives no command, engine, image digest or observed output for this probe, and no committed test or script reproduces it yet (a grep of tests/ and scripts/ for EACCES or config-file returns nothing). The Sources entry cites only the upstream `fs.stat` call. The claim matches POSIX directory search rules for a non-owner on a 0700 directory, so it changes nothing that is built. This was added in this revision. Checks run and limitations: as in F-01.
+PROPOSAL: Record the probe command, engine and observed EACCES and success outputs next to line 132, or mark the claim as reasoning until the T12 native regression records it.
+
+---
+
+Notes for the dispatcher:
+
+- **Not executed (denied):** Bash was denied for `bun run test` and for printing the remaining workflows and `package.json`. `bun run check:workflows`, `git diff --check`, `verify-local.mjs --pull-only` and `test:native` were never run.
+- **Not observed:** `gh` queries, web fetches (including the pinned upstream `src/renovate.ts` named in Sources), historical CI run 44190212437 and Lab issue 3.
+- **Review check:** `vh-adlc review check` was only probed with `--help`, which returned a usage result. It was never run on records.
+- **Gate:** the `on_feature_branch_if_set` failure comes from the detached HEAD in the clone. The `spec_review_fresh` and `accepted` failures are expected for a draft whose baseline changed.
+- **R-18 follow-up:** all four R-18 findings were addressed in this revision. F-01 above follows on from the R-18 F-01 change.
+- **Lab:** the Lab plan's smoke steps (lines 217 to 222) agree with this document. Nothing was created or changed.
+
+### R-20
+
+FINDING: F-01
+KIND: factual
+SEVERITY: should-fix
+WHERE: Design, Recovery and scheduler health (lines 156 and 161); Design, Staged integration smoke in Lab (line 183); Design, Component release and source identity (lines 199 and 210); Scope (line 75); Context, Owner summary (lines 35, 42 and 49 to 50); Test Plan rows AC-05 and AC-07; Tasks T12 (line 276)
+EVIDENCE: The document drops the synthetic external caller (lines 49, 199 and 210), the replacement-key/JWT retirement exercise and the separate test App (lines 42 and 183), and the per-manager lockfile matrix (line 75). It also makes an operational pause reset `RENOVATE_ENABLED=false` (line 156). Line 161 makes docs/operations.md the owner of these procedures. The guide still requires the removed items: `docs/operations.md:12-13` points to the connected fixture procedure, `:39` says "Connected proof must still verify complete resulting manifests and lockfiles for each supported manager", `:105` and `:117` require `test "$CALLER_SHA" = "$RELEASE_SHA"`, `:151` and `:189-191` require the external caller run, fixture key retirement and a "fresh fixture-only App", and `:92` pauses without resetting the flag. The existing test asserts these stale requirements: `tests/operations.test.mjs:34` requires the CALLER_SHA comparison, `:37-40` requires the order "Run the external caller", then "Retire fixture credentials", and `:63-64` requires the phrases "fixture-only App" and "operational pause". The Test Plan binds only the new smoke sequence (AC-05) and the covers-path diff list (AC-07) to tests. The AC-07 row says only "Inspect exact tag/run/review/integration identity comparisons". T12's done condition says "align the single-target policy/docs" but names no check that the removed prerequisites are gone or that the pause resets the flag. So an implementation could keep the CALLER_SHA check and the retirement steps in the guide and still pass every named proof. Lab's delivery would then be blocked on a synthetic caller and key retirement that both this document and the Lab plan (`lab/docs/internal/plans/opnsense-encrypted-backup.md:212`, "No released-SHA external-caller fixture or synthetic key-retirement cycle is a delivery prerequisite") say are not required. The November 18 revision introduced the gap, and earlier passes did not cover it beyond R-17 F-05's mention of `docs/operations.md:39, 151 and 184 to 195`. Checks run: read the reviewer agent file, the pinned `conventions/feature-documents.md` from the docs cache at 0c983f6 (Read tool), AGENTS.md, CLAUDE.md, the whole document including R-16 to R-19, and `git diff b76a3d1 a8485e4`, which shows only the document changed. Also read action.yml, prepare.mjs, cleanup.mjs, policy.mjs, renovate.yml, manual.yml, schedule.yml, ci.yml, config/targets.json, package.json, docs/operations.md and tests/operations.test.mjs, grepped scripts/verify-local.mjs for ownership handling, and grepped the Lab plan for the smoke steps. `git rev-parse HEAD` matched the target. `git status --short` was clean. `vh-adlc lint` returned pass. `vh-adlc fresh` reported R-19 at b76a3d1 stale (baseline-changed), no implementation review, and a clean feature tree. `vh-adlc gate planned` failed on spec_review_fresh, accepted and on_feature_branch_if_set (detached HEAD). `vh-adlc next` returned owner decision (rule 2, branch). Limitations: Bash was denied for one combined `cat`/`ls` listing of the docs cache and repository, so I read those files with the Read tool instead. `vh-adlc review check` returned only a usage result for `--help`. It was not run on records because this reviewer cannot write a records file. These were not run: `bun run test`, `bun run check:workflows`, `git diff --check`, `verify-local.mjs --pull-only`, `test:native`, `gh`, and web fetches (including the pinned upstream `src/renovate.ts`). Historical CI run 44190212437 and Lab issue 3 were not observed. No source, ref, provider, App, credential, issue, CI run or release was changed.
+PROPOSAL: Add to T12's done condition and the AC-05/AC-07 rows that tests/operations.test.mjs checks two things. First, docs/operations.md no longer requires the external caller identity, fixture key retirement, a separate fixture App or per-manager connected lockfile proof. Second, the operational pause resets and reads back `RENOVATE_ENABLED=false` before disabling both entries.
+
+FINDING: F-02
+KIND: judgement
+SEVERITY: should-fix
+WHERE: Design, Staged integration smoke in Lab (lines 167 and 178); Design, Recovery and scheduler health (line 161); Scope (line 73); Context, Owner summary (line 40); Test Plan rows AC-02 and AC-05; Tasks T12 (line 276)
+EVIDENCE: The owner's headline constraint is zero private Actions minutes. The design enforces it with one ordering rule: "Read back the private target's Actions setting as disabled before any seed push or PR. If it is not disabled, stop without writing" (line 167, repeated at lines 40 and 73, with line 178 keeping Actions disabled on retry). Line 161 says docs/operations.md owns the generic smoke setup and tests/operations.test.mjs checks it. The AC-05 row's ordered sequence starts at "disable/read back schedule.yml before permitting the one-off manual write" and leaves out the Actions-disabled readback. The AC-02 row asks only to "Document ... zero-private-minutes setup readbacks for Lab", with no ordering or stop-on-failure check. Today docs/operations.md mentions no target Actions setting at all (the only Actions reference is `:59`, about debug logging). So a guide that lists the readback after the seed push, or with no stop-without-writing condition, passes both rows. That is exactly the case where a bot push or PR on the private target could start private jobs. Checks run and limitations: as in F-01.
+PROPOSAL: Add the Actions-disabled readback, and its stop-without-writing branch, as the first ordered step of the smoke sequence that tests/operations.test.mjs checks in the AC-05 row and T12. It must come before the seed push, any target write and the write dispatch, including on retry.
+
+FINDING: F-03
+KIND: factual
+SEVERITY: nit
+WHERE: Review Log (row R-19, line 306; subsection R-19, lines 966 to 975)
+EVIDENCE: The R-19 row's Outcome reads "Two factual should-fix findings and one nit; exact read-only Opus review, CLI limits retained. Non-record dispatcher context remains byte-exact below its separator." The R-19 records hold two factual should-fix findings and one nit. Every other row states the finding counts, and this Outcome reads like a description of the author's fixes rather than the review's result. The R-19 subsection also stores a "Notes for the dispatcher" block after a `---` rule, below the records, and the pinned convention says the subsection holds the reviewer's returned records. `vh-adlc lint` still passes. Checks run and limitations: as in F-01.
+PROPOSAL: Reword the R-19 Outcome to "Two factual should-fix findings and one nit" plus the isolation and check notes, and keep the dispatcher notes out of the stored record subsection, or mark them as non-record context.
+
+### R-21
+
+FINDING: F-01
+KIND: factual
+SEVERITY: should-fix
+WHERE: Test Plan row AC-03 (line 247); Tasks T12 (line 276); Design, Authentication and execution (lines 130 to 133); Context, Owner summary (line 55)
+EVIDENCE: The AC-03 row says to "Exercise the host config-stat/container-read boundary with the real ownership layout; the old image-owned parent must fail host stat and the repaired parent must permit it". Line 132 says "T12 persists that regression in scripts/verify-local.mjs". The defect being fixed is in the runtime layout that `.github/actions/renovate/scripts/prepare.mjs:53-58` builds: it writes `renovate.json` inside the mkdtemp directory, sets that directory to 0700 and chowns it to the image UID. `action.yml:85-89,96-101` then passes that config path, mounts that directory as /tmp and cleans it up. `scripts/verify-local.mjs` never calls prepare.mjs. It builds its own `private` directory (lines 45 to 48), chowns it itself (line 109) and mounts it at /work (line 94). Only `createRunPlan` is shared (line 72). A grep of tests/ for `prepare.mjs`, `private-dir`, `docker-volumes` and `config-file` finds only static wiring assertions (`tests/workflows.test.mjs:84` and `:112`, and :112 still expects the old `private-dir:/tmp` mount). So the persisted regression can show the old layout failing and a new layout passing in verify-local.mjs, while prepare.mjs and action.yml keep the broken layout or build a different one. Every named proof would still pass, and the first live run would fail before Docker starts, which is the defect this revision says it fixes. The proof also does not name the new prepare outputs (a working child for the mount and the parent for cleanup) that action.yml must wire. This gap comes from the November 18 revision that added the config-stat repair. Checks run: read the reviewer agent file, the pinned conventions/feature-documents.md from the docs cache at 0c983f6 (Read tool), AGENTS.md, CLAUDE.md, the document (lines 1 to 295 and 863 to 1028, including R-17 to R-20), action.yml, prepare.mjs, cleanup.mjs, policy.mjs, renovate.yml, manual.yml, schedule.yml, ci.yml, config/targets.json, docs/operations.md, tests/operations.test.mjs and scripts/verify-local.mjs lines 30 to 149. I also grepped the Lab plan for the zero-private-Actions handling. `git diff a8485e4 HEAD` shows that only the document changed: the AC-05 and AC-07 rows, T12, the R-19 row Outcome and the added R-20 row and records. `git rev-parse HEAD` matched the target, `git cat-file -t 8465955` returned commit, and `git status --porcelain` was empty. With the document path relative, `vh-adlc lint` returned pass. `vh-adlc fresh` reported R-20 at a8485e4 stale (baseline-changed), no implementation review and a clean feature tree. `vh-adlc gate planned` failed on spec_review_fresh, accepted and on_feature_branch_if_set (detached HEAD, current branch ""). `vh-adlc next` returned owner decision (rule 2, branch). My first lint, fresh, gate and next calls used an absolute document path and returned only a usage result. Limitations: these Bash calls were denied: a combined `cd`, `wc` and `git log` listing, a single combined call of the four vh-adlc commands, a combined `git diff --check a8485e4 HEAD` and `git status`, and `bun test tests/operations.test.mjs`. `bun run test`, `bun run check:workflows`, the repository-wide `git diff --check`, `verify-local.mjs --pull-only`, `test:native` and `vh-adlc review check` were not run. No `gh` query or web fetch was made, so the pinned upstream `src/renovate.ts`, historical CI run 44190212437 and Lab issue 3 were not observed. Nothing was created or changed in the source tree or Git refs, or on any provider, App, credential, issue, CI run or release.
+PROPOSAL: Require the native ownership regression to build its layout by running the action's own prepare logic, either prepare.mjs or a layout function that prepare.mjs and the test both import. Add a structured check that action.yml mounts the working child as /tmp, passes the parent-level config file and cleans up the parent. Put both in the AC-03 row and in T12's done condition.
+
+FINDING: F-02
+KIND: judgement
+SEVERITY: should-fix
+WHERE: Test Plan row AC-07 (line 251); Tasks T12 (line 276); Context, Owner summary (lines 49 to 50); Design, Central workflow and policy ownership (line 100); Design, Component release and source identity (line 210)
+EVIDENCE: This revision added to the AC-07 row: "tests/operations.test.mjs also rejects retained prerequisites for a synthetic external caller identity, fixture-key retirement, separate fixture App or per-manager connected lockfile matrix". T12 says "regressions excluding the removed external-caller/key/App/per-manager prerequisites". This is a free-text judgement of docs/operations.md prose. The pinned convention says such a proof "lists its must-pass and must-fail examples in the row", and the row lists none. The document also keeps legitimate prose on the same subjects. Line 50 says "Examples retain immutable-SHA pinning and interface checks; a future external adoption verifies its own caller". Line 100 keeps the checked external example. Line 210 says external consumption "is verified when an external consumer is actually adopted", and `docs/operations.md:43` says "Use the complete external caller example". A negative pattern on "external caller" or "fixture" therefore rejects a correct guide. A pattern on exact current phrases, such as `test "$CALLER_SHA" = "$RELEASE_SHA"` or "Retire fixture credentials", passes a guide that rewords the same prerequisite. Two implementers would write different checks, and one of them fails a correct guide. This came from the latest revision, made in response to R-20 F-01. Checks run and limitations: as in F-01.
+PROPOSAL: Add the patterns' must-fail examples to the AC-07 row (for example a CALLER_SHA equality test in Release identity, and an ordered external-caller run or fixture-key retirement as a delivery step). Add must-pass examples too: the retained external-example adoption text and a sentence saying those prerequisites are not required. Scope the check to the Release identity and delivery sections.
+
+FINDING: F-03
+KIND: factual
+SEVERITY: nit
+WHERE: Design, Recovery and scheduler health (line 156); Design, Staged integration smoke in Lab (line 180); Context, Owner summary (line 43); Test Plan rows AC-05 and AC-07 (lines 249 and 251); Tasks T12 (line 276)
+EVIDENCE: Line 156, the AC-05 row ("reset the flag, disable/read back both entries") and the AC-07 row ("resets and reads back RENOVATE_ENABLED=false before disabling both entries") put the flag reset before disabling the entries. Line 180 says "disable manual.yml, retain schedule.yml disabled, reset RENOVATE_ENABLED=false", and line 43 says "disable both central entry workflows, reset the enable flag". Either order is safe, because schedule.yml is already disabled and the rows decide what the ordered test asserts. The operational-pause check is also placed in the AC-07 (release) row, while pause and disable behaviour belong to AC-05. Checks run and limitations: as in F-01.
+PROPOSAL: Give line 180 and line 43 the same order as the rows. Move the operational-pause sentence from the AC-07 row to the AC-05 row.
+
+### R-22
+
+FINDING: F-01
+KIND: factual
+SEVERITY: nit
+WHERE: Test Plan row AC-03 (line 247)
+EVIDENCE: The AC-03 row now reads "The the old image-owned parent must fail host stat and the repaired parent must permit it without widening data access." The word "the" is doubled. This revision added it when it rewrote the row in response to R-21 F-01 (`git diff 74150636ee0e91696d887519994ea4efc3e6cec1 HEAD`). It changes nothing that is built or that a proof checks. Apart from this, the revision handles R-21 F-01, F-02 and F-03: the native regression and prepare.mjs now share one storage-layout function, prepare.mjs runs in a fixture, the action wiring check is structured, the AC-07 prose check became a review-time source inspection, the flag reset now comes first in the Owner summary (line 43) and line 180, and the pause check moved to AC-05. I checked those changes against `.github/actions/renovate/action.yml:81-101`, `scripts/prepare.mjs:50-65`, `scripts/cleanup.mjs:4-14`, `scripts/verify-local.mjs:45-145`, `scripts/policy.mjs:40-96` and `tests/workflows.test.mjs:106-117`. They match the Design at lines 130 to 133. The Lab plan smoke steps (lines 216 to 222 and 230 to 235) agree with this document. Lab line 222 still uses the older order (disable first, then reset), but either order is safe there because schedule.yml is already disabled, and Lab is not a target of this review. Checks run: read the reviewer agent file, the pinned `conventions/feature-documents.md` from the docs cache at 0c983f6 (Read tool), AGENTS.md, CLAUDE.md, the document lines 1 to 290 and 860 to 1052 (R-16 to R-21 and Sources), and the full diff from R-21's commit, which changed only the document. `git status --porcelain` was empty. `git cat-file -t 8465955ccf5aad6b4d705bdd627fa231dca60882` returned commit. `vh-adlc lint` returned pass. `vh-adlc fresh` reported R-21 at 7415063 as stale (baseline-changed), no implementation review and a clean feature tree. `vh-adlc gate planned` failed on spec_review_fresh, accepted and on_feature_branch_if_set (the clone is on a detached HEAD, so the current branch is ""). `vh-adlc next` returned owner decision (rule 2, branch). Limitations: Bash was denied for one combined cat/ls/wc/git ls-files listing, which I replaced with Read and Glob, and for `bun run test`. `vh-adlc review check --help` returned only a usage result. It was not run on records because this reviewer cannot write a records file. These were not run: `bun run check:workflows`, `git diff --check`, `verify-local.mjs --pull-only`, `test:native`, `gh` queries and web fetches. So the pinned upstream `src/renovate.ts` host-side config check, the diagnostic probe output at line 132, historical CI run 44190212437 and Lab issue 3 were not observed. Nothing was created or changed in the source, Git refs, providers, Apps, credentials, issues, CI runs or releases.
+PROPOSAL: Change "The the old image-owned parent" to "The old image-owned parent" the next time a revision touches the AC-03 row.
+
+### R-23
+
+CRITERION: AC-01 The central public Linux callers and checked examples use the pinned official actions and image through the defining-source reusable workflow.
+VERDICT: not verified
+EVIDENCE: Pinned Bun 1.4.4 ran `bun scripts/check-workflows.mjs` from the clone. It printed only its checking banner and no lint error, and it did not report the Docker fallback, so the local actionlint passed the 1.7.12 version guard. I inspected `.github/workflows/renovate.yml:35-71`: the two checkouts run in order (caller at `github.sha` into `_vhco-policy`, then `job.workflow_repository` at `job.workflow_sha` into `_vhco-runner`), both set `persist-credentials: false`, the native SHA comparison runs immediately before the literal `./_vhco-runner/.github/actions/renovate` step, and the job uses ubuntu-24.04. In `.github/actions/renovate/action.yml:44,65,82,86`, every action uses a 40-hex pin, the image is pinned by digest, and the scripts run through `github.action_path`. `schedule.yml` and `manual.yml` call `./.github/workflows/renovate.yml`. `examples/external/renovate.yml:10` uses `@FULL_COMMIT_SHA`, at ba57c33. Limitations: I did not run `tests/workflows.test.mjs`, because it writes temporary files with `tmpdir()` and Bash with a scratch `TMPDIR` prefix was denied. The native-image fixture did not run (see AC-04). I did not observe public CI at ba57c33: the `/tmp/vhco-review-ci-read.mjs` helper is outside the readable roots, Bash `cat` of it was denied, and I did not run a helper I could not inspect.
+
+CRITERION: AC-02 The integration rejects unsupported caller/implementation identities, debug settings and out-of-policy target selection before requesting the explicitly scoped App token, with deployment custody requirements documented.
+VERDICT: met
+EVIDENCE: Pinned Bun 1.4.4 ran `bun test tests/policy.test.mjs` at ba57c33: 34 pass, 0 fail, 45 expect() calls. That covers out-of-policy subsets, invalid policies, wrong caller ref, event, repository, workflow or SHA, implementation identity and head mismatches, both debug keys, unsupported modes and refusal messages that do not echo input (`.github/actions/renovate/scripts/policy.mjs:14-66`). Inspection of `action.yml:47-80` shows `prepare.mjs` calling `createRunPlan` before `actions/create-github-app-token`. The token step takes owner and repositories from the prepare outputs, requests the explicit nine-permission subset with no actions permission, and sets `skip-token-revoke: 'false'`. `docs/operations.md:48-58` documents main-only environment custody, App scope, trusted-workflow-author status and readbacks before supplying the key. `docs/operations.md:187` documents the target Actions-disabled readback. Limitations: live App authorization and direct-main restrictions are deployment checks under the Test Plan. They were not observed. I did not run the structured ordering test in `tests/workflows.test.mjs:97-123`; I inspected the same ordering directly.
+
+CRITERION: AC-03 The real command entry point discards private stdout/stderr while preserving success/failure, and its workflow wiring retains the private temporary-storage and environment boundary.
+VERDICT: not verified
+EVIDENCE: Inspection at ba57c33 found the following. `renovate-command.sh:2` is `exec renovate "$@" >/dev/null 2>&1`. `action.yml:87-94` sets `mount-docker-socket: 'false'`, mounts only `work-dir:/tmp`, sets `configurationFile` to the parent-level config, uses `env-regex ^(LOG_LEVEL|NO_COLOR)$` and the command-file wiring. Cleanup receives `private-dir` (`action.yml:95-101`, `cleanup.mjs:4-14`). `storage.mjs:6-12` creates a mode-0700 `work` child and a mode-0600 `renovate.json` in the parent. `prepare.mjs:54-58` keeps the parent host-owned at mode 0700 and chowns only the work child and config to the image UID. `verify-local.mjs:46-126` shares `prepareStorage` and asserts that host stat through the old image-owned parent fails with EACCES while host stat of the config and container read of it succeed. Limitations: `tests/privacy.test.mjs` and the prepare.mjs fixture test in `tests/workflows.test.mjs:143-192` were not executed because they write under `tmpdir()` and I could not set a scratch TMPDIR. The native invalid-platform suppression and layout regression did not run (see AC-04). I could not read the pinned upstream action source to confirm that its host-side config access is stat only. The live outer-action log check belongs to Lab and was not observed.
+
+CRITERION: AC-04 The pinned native image validates the runner's configuration and extracts the supported synthetic dependency formats; actual target compatibility remains an adoption check.
+VERDICT: not verified
+EVIDENCE: `bun run test:native` in the clone exited 1 at `scripts/verify-local.mjs:38`, before any temporary directory was created. The error was "No such image: ghcr.io/renovatebot/renovate@sha256:ccc4dc08...", because the default Docker engine does not hold the image. The `bun` that `bun run` picked up from PATH was 1.4.3, not the pinned 1.4.4. Bash with a `CONTAINER_ENGINE=podman` prefix was denied, so the Fedora-required Podman path and `--pull-only` were not executed. I inspected `tests/native/container.test.mjs:4-23` and `verify-local.mjs:116-148`: they cover strict validation of the generated global and self policies, rejection of badOption, seven synthetic managers including regex with at least 3 dependencies, the tool inventory and the writable mode-0700 mount. Author progress lines and public CI were not used as proof.
+
+CRITERION: AC-05 Native rate/concurrency/cadence controls and disable/retry behavior are wired and documented, with locally executable health commands that reject disabled, stale or unreadable state.
+VERDICT: not met
+EVIDENCE: By inspection, these parts match the Design. `policy.mjs:88-93` forces `schedule: []`, `commitHourlyLimit: 2`, `prConcurrentLimit: 5` and `automerge: false`, and `prCommitsPerRunLimit` is 0. `schedule.yml:4` sets the cron `23 5,17 * * *` gated on `RENOVATE_ENABLED`. `renovate.yml:28-31` sets `queue: max` and `cancel-in-progress: false`. `docs/operations.md:91` orders the pause flag reset and readback before disabling entries. The documented smoke procedure does not meet the Test Plan sequence, though. `docs/operations.md:187-190` reads back target Actions disabled only once, "Before seeding it". It gives no stop-without-writing branch, and step 4 does not re-read target Actions before the write dispatch or on retries. The AC-05 row requires "first read back target Actions disabled and stop without writing on failure, before every seed/target write and write dispatch, including retries". `tests/operations.test.mjs:46` checks only the phrase 'target Actions disabled', so it would pass this incomplete procedure. Limitations: the health-command fixture tests (`tests/operations.test.mjs:91-116`) were not executed because they write under `tmpdir()`.
+
+CRITERION: AC-06 Every approved pilot has verified updater ownership and processing evidence through a valid dependency PR or an observed already-current result, with its remaining policies preserved.
+VERDICT: untested
+EVIDENCE: I inspected the document at ba57c33. The criterion is unticked with `Residual: https://github.com/vhco-pro/lab/issues/3` (line 239). The AC-06 Test Plan row assigns real pilot adoption to Lab, and no source check can establish it. Limitations: I did not fetch Lab issue 3 or check its state, and no live pilot was observed.
+
+CRITERION: AC-07 The shared GitVersion caller preserves tests-first, dry-run/default-off, exact-source and manual/automatic release controls, with documented source-identity and recovery checks.
+VERDICT: not verified
+EVIDENCE: Pinned Bun 1.4.4 ran `bun test tests/release.test.mjs tests/release-workflow.test.mjs`: 16 pass, 0 fail, 39 expect() calls. By inspection, `release.yml:21-52` runs `checks` (ci.yml), then the current-main preflight, then the publisher at the pinned `b18de6d`, with dry-run unless the preflight outputs false. It has main-push and manual entries with `expected-sha`, plus native release concurrency. `docs/operations.md:111` lists exactly the frontmatter covers paths in order, including package.json. Source inspection of `docs/operations.md`, README.md and AGENTS.md found no remaining synthetic-caller, extra-App, key-retirement or per-manager connected prerequisite: `examples/connected/`, `scripts/verify-connected.mjs` and `tests/connected.test.mjs` are deleted, and `docs/operations.md:194` forbids a second fixture App/key-retirement suite. Limitations: `tests/operations.test.mjs` did not run. That file holds the first-enable fixture cases (completed, non-completed, unknown, incomplete, failed-read), the failed-publication ordering test and the covers-equality test. It was skipped for the TMPDIR restriction above. Actual shared version calculation and tag/release readback are separately approved delivery steps and were not observed.
+
+FINDING: F-01
+KIND: factual
+SEVERITY: should-fix
+WHERE: docs/operations.md, Single integration smoke (lines 187 to 192); tests/operations.test.mjs (lines 44 to 61); Test Plan row AC-05; Task T12; Design, Staged integration smoke in Lab (line 167)
+EVIDENCE: Design line 167 says "If it is not disabled, stop without writing." The AC-05 row requires the target Actions-disabled readback with a stop-without-writing branch "before every seed/target write and write dispatch, including retries". T12 names "the target Actions-disabled readback and stop-without-writing branch before any seed/target write". `docs/operations.md:187` reads back Actions disabled only "Before seeding it" and has no stop branch. Step 4 (line 190) dispatches the write without a fresh target Actions readback, and step 6 sends retries back to "the entire smoke setup" without naming the readback. `tests/operations.test.mjs:46` matches only the string 'target Actions disabled', so the ordered test passes without the stop branch and without the pre-dispatch readback. The zero-private-minutes guarantee therefore depends on a step the guide and its test do not fully state. This traces to the T12 changes between aa438fe and ba57c33.
+PROPOSAL: Add an explicit "if not disabled, stop without writing" branch to step 1, and repeat the target Actions readback immediately before the step 4 write dispatch and at the start of every retry. Extend the ordered test to require those phrases in that order.
+
+FINDING: F-02
+KIND: factual
+SEVERITY: should-fix
+WHERE: Review Log; frontmatter `branch`
+EVIDENCE: `vh-adlc fresh` at ba57c33 reports R-22 (aa438fe) as stale with reason covered-drift for 15 covered paths "changed on the default branch since the reviewed commit". The output also reports `default_branch: feat/shared-renovate-runner`. In the clone, `git branch -a` shows `remotes/origin/HEAD -> origin/feat/shared-renovate-runner` alongside `remotes/origin/main`. The binary treats the feature branch's own implementation commits as default-branch drift. `vh-adlc gate complete` therefore fails on spec_review_fresh as well as all_met, impl_review_fresh, impl_review_clean and on_feature_branch_if_set (the clone is on a detached HEAD). The normative-baseline diff since aa438fe touches only the AC-06 Residual line in Acceptance Criteria.
+PROPOSAL: Before claiming source completion, resolve which default branch the remote declares, or record the freshness result the binary will actually return. Do not assume the accepted R-22 stays fresh through the T13 completion gate.
+
+FINDING: F-03
+KIND: factual
+SEVERITY: nit
+WHERE: Context, Owner summary (line 55)
+EVIDENCE: Line 55 says "the maintained native regression and implementation review remain pending". The T12 Progress line (line 278) says the shared-layout native test passes 22 assertions. I did not observe either claim, because the native suite could not run here (see AC-04).
+PROPOSAL: When T12 is closed, update line 55 to separate the author-observed native pass from the still-pending independent review and public CI.
+
+### R-24
+
+CRITERION: AC-01 The central public Linux callers and checked examples use the pinned official actions and image through the defining-source reusable workflow.
+VERDICT: not verified
+EVIDENCE: I inspected `bun /tmp/vhco-review-support/check.mjs` and then ran it with `fast` and `workflow` at b0f5c43 (pinned Bun 1.4.4, scratch TMPDIR). The workflow check printed only its actionlint banner and returned no error status. All 7 tests in `tests/workflows.test.mjs` passed. They cover these points: schedule.yml and manual.yml call `./.github/workflows/renovate.yml`; the external example uses `@FULL_COMMIT_SHA` and matches the interface; there are two ordered checkouts with `persist-credentials: false`; the SHA guard step comes immediately before `./_vhco-runner/.github/actions/renovate`; the job runs on ubuntu-24.04; every action `uses` is pinned to 40 hex characters; the image is pinned by digest; and scripts run through `ACTION_PATH`. Inspection of `.github/workflows/renovate.yml:35-71` and `.github/actions/renovate/action.yml:43-101` agrees with those tests. I inspected `bun /tmp/vhco-review-support/ci-read.mjs` and ran it. It reported run 44263858746, headSha b0f5c431826f657a35aeb144fe7630f3dfeda0fa, attempt 1, conclusion success. Job `test` completed with these steps successful: Test, Check workflows, Download the pinned native runtime, Verify the pinned native runtime. Limitations: `ci-read.mjs --logs` failed with "creating cache entry: open /home/m/.cache/gh/run-log-44263858746-...zip: read-only file system", so the complete CI log and the runner labels were not observed. The local Podman native run was denied (see AC-04), so the native-image fixture part of this composite criterion was observed only as a CI step conclusion, not as logged assertions.
+
+CRITERION: AC-02 The integration rejects unsupported caller/implementation identities, debug settings and out-of-policy target selection before requesting the explicitly scoped App token, with deployment custody requirements documented.
+VERDICT: met
+EVIDENCE: The helper `fast` run at b0f5c43 passed every test in `tests/policy.test.mjs`. It refuses wrong-organization, unlisted, wildcard, injected, empty and duplicate selections, malformed policies, mismatched callerRef, callerSha, callerWorkflowRef, event, implementationRepository, implementationWorkflow, implementationSha, implementationHead and policyHead, debug and stepDebug, and the unsupported modes lookup, extract, TRUE and a multiline value. Refusal messages do not echo hostile input. The test `validates selection and debug mode before requesting an explicitly scoped token` passed. It checks that prepare.mjs runs before `actions/create-github-app-token`, that owner and repositories come from the prepare outputs, the nine explicit permissions, no actions permission, and `skip-token-revoke: 'false'`. Inspection of `prepare.mjs:31-49` shows `createRunPlan` running before any output is written. `docs/operations.md:48-58` documents trusted-workflow-author status, installation scope, readback of main-update restrictions and the main-only environment before the key is supplied, and the absence of App credentials in PR CI. `docs/operations.md:187` and `:190` document the target Actions-disabled readback with stop-without-writing. Limitations: live App authorization and direct-main restrictions are deployment checks under the Test Plan and were not observed.
+
+CRITERION: AC-03 The real command entry point discards private stdout/stderr while preserving success/failure, and its workflow wiring retains the private temporary-storage and environment boundary.
+VERDICT: not verified
+EVIDENCE: The helper `fast` run passed `tests/privacy.test.mjs`. The real `renovate-command.sh` ran with a canary-printing stub, returned exit 0 and exit 23, and both streams were empty. The structured action test passed: `mount-docker-socket: 'false'`, `docker-volumes` is the work-dir mapped to /tmp, `configurationFile` is the prepare config-file, cleanup receives private-dir, `env-regex ^(LOG_LEVEL|NO_COLOR)$`, no additional-env-list, and the command file goes through `github.action_path`. The real prepare.mjs fixture test passed: the parent and work dir are mode 0700, the config is mode 0600, and the only chown is `12021:0` on work-dir and config-file. Inspection of `storage.mjs:6-12`, `prepare.mjs:54-58`, `cleanup.mjs:4-14` and `verify-local.mjs:46-147` shows the shared layout function and native assertions for old-parent EACCES, host config stat, container config read and invalid-platform output suppression. Limitations: the native layout regression and the native Renovate error case did not run locally because the Podman command was denied. CI reports only the step conclusion for `Verify the pinned native runtime`, and its log was unreadable. I could not read the pinned upstream action source to confirm its host-side config access. The live outer-action log check belongs to Lab and was not observed.
+
+CRITERION: AC-04 The pinned native image validates the runner's configuration and extracts the supported synthetic dependency formats; actual target compatibility remains an adoption check.
+VERDICT: not verified
+EVIDENCE: I tried `CONTAINER_ENGINE=podman TMPDIR=<scratch> PATH=<pinned bun>:$PATH bun test tests/native/container.test.mjs`. The harness denied it, and I did not work around that. `verify-local.mjs --pull-only` was not run either. Inspection of `tests/native/container.test.mjs:4-23`, `verify-local.mjs:108-149` and `tests/fixtures/native/inventory.mjs` shows assertions for a non-root UID, a writable mode-0700 mount, the Node, Bun, Go, PHP and Composer inventory, strict validation of the generated global and repository policies, badOption rejection, seven managers each with at least one dependency, and regex with at least three. Missing prerequisites throw. The CI metadata for run 44263858746 at b0f5c43 shows `Download the pinned native runtime` and `Verify the pinned native runtime` concluding success, and ci.yml at this commit runs `bun run test:native` in that step. The complete log, with the report and assertion output, could not be read (read-only gh cache), so what executed was not established from the log. Author progress lines were not used as proof.
+
+CRITERION: AC-05 Native rate/concurrency/cadence controls and disable/retry behavior are wired and documented, with locally executable health commands that reject disabled, stale or unreadable state.
+VERDICT: not verified
+EVIDENCE: Inspection of `policy.mjs:77-93` shows force `schedule: []`, `commitHourlyLimit: 2`, `prConcurrentLimit: 5`, `automerge: false` and `prCommitsPerRunLimit: 0`. `schedule.yml:4,9` sets cron `23 5,17 * * *` gated on `RENOVATE_ENABLED == 'true'`. `manual.yml:20` allows writes only when the flag is true. `renovate.yml:28-31` uses one group with `queue: max` and `cancel-in-progress: false`. The R-23 F-01 repair is present: `docs/operations.md:187` has "if not disabled, stop without writing. Apply this check before every target write", `:190` repeats the target readback before the write dispatch, and `:192` says "Every retry begins by repeating step 1". The ordered smoke and pause test in `tests/operations.test.mjs:44-63` passed in the helper `fast` run. Health fixtures for inactive, stale, no-success, api-failure and malformed exited non-zero as expected. The `healthy` case failed locally (`Expected: 0, Received: 1` at `tests/operations.test.mjs:112`). The test captures the child's stderr without printing it, so the cause was not observed. It is the only health case that needs the documented jq pipeline to succeed under `PATH=<dir>:/usr/bin:/bin`, which points to the environment rather than the source. The CI Test step at b0f5c43 concluded success, but its log was unreadable. So a passing run of the healthy-path health command was not observed in this review.
+
+CRITERION: AC-06 Every approved pilot has verified updater ownership and processing evidence through a valid dependency PR or an observed already-current result, with its remaining policies preserved.
+VERDICT: untested
+EVIDENCE: Inspection at b0f5c43: the criterion is unticked with `Residual: https://github.com/vhco-pro/lab/issues/3` (document line 239). The AC-06 Test Plan row assigns real pilot adoption and the single smoke to Lab, and no source check can establish them. Limitations: Lab issue 3 was not fetched, the companion Lab clone was not used as evidence for this criterion, and no live pilot or smoke was observed.
+
+CRITERION: AC-07 The shared GitVersion caller preserves tests-first, dry-run/default-off, exact-source and manual/automatic release controls, with documented source-identity and recovery checks.
+VERDICT: not verified
+EVIDENCE: The helper `fast` run passed all of `tests/release.test.mjs` and `tests/release-workflow.test.mjs`: manual exact candidate, automatic main push, effective dry-run ignoring expected-sha, superseded-source refusal, and invalid native state refusal. Also passing in `tests/operations.test.mjs` were the ordered first-publication procedure, the failed-publication disable-before-repair and abandoned-tag test, and the release identity test, which asserts that the `git diff --exit-code` paths at `docs/operations.md:111` equal the frontmatter covers, including package.json. First-enable fixtures for requested, waiting, pending, queued, in_progress, unknown, incomplete and failed-read exited non-zero with no writes. Inspection of `release.yml:21-52` shows checks, then the current-main preflight, then the publisher pinned at b18de6d with dry-run unless the preflight outputs false, plus main-push and manual entries and native concurrency. My review-time inspection of operations.md, README and AGENTS found no synthetic-caller, extra-App, key-retirement or per-manager connected prerequisite, and `docs/operations.md:194` forbids a second fixture App or key-retirement suite. Limitation: the `completed` first-enable fixture, the only positive path through the documented jq check, failed locally (`Expected: 0, Received: 1` at `tests/operations.test.mjs:149`) with stderr not shown. The CI Test step concluded success but its log was unreadable. Actual version calculation and tag/release readback are separately approved delivery steps and were not observed.
+
+FINDING: F-01
+KIND: judgement
+SEVERITY: should-fix
+WHERE: tests/operations.test.mjs (lines 93 to 161); docs/operations.md, Local verification (lines 16 to 29); AGENTS.md, Verification; Test Plan rows AC-05 and AC-07
+EVIDENCE: The fixed review helper ran `bun test` on all six fast test files at b0f5c43 and got 78 pass, 2 fail, 260 expect() calls. The only failures were `documented native health commands classify healthy scheduling` and `the documented first-enable check holds before writes for completed run state`. These are the only two cases where the documented `jq -e` pipelines (`docs/operations.md:71,73,139`) must succeed, and both tests force `PATH` to `<fixture>:/usr/bin:/bin`. The tests collect the child's stderr but never print it, so the failure says nothing about its cause. The negative cases assert only a non-zero exit, so they pass the same way whether the procedure correctly rejects the state or a required tool is missing. `docs/operations.md:16` lists Bun, Git and Docker or Podman as the local prerequisites, but not jq or bash, and AGENTS.md says to run `bun run test` without naming them. Public CI on ubuntu-24.04 reported the Test step as successful at this commit. As a result, the documented local source check cannot tell a missing host tool from a broken procedure, which is the ambiguity this review hit.
+PROPOSAL: List jq (and bash) as local prerequisites in docs/operations.md and fail the fixture tests early with a clear message when either is missing. Include the child's stderr in the failure message, and have the negative cases check that they failed for the expected reason (for example, that jq actually ran).
+
+### R-25
+
+CRITERION: AC-01 The central public Linux callers and checked examples use the pinned official actions and image through the defining-source reusable workflow.
+VERDICT: met
+EVIDENCE: I inspected `/tmp/vhco-review-support/check.mjs` and ran it with `fast` and `workflow` at 1d95e06, using pinned Bun 1.4.4 and the scratch TMPDIR. All 7 tests in `tests/workflows.test.mjs` passed. They cover these points: schedule.yml and manual.yml call `./.github/workflows/renovate.yml`; the external example matches the reusable interface at `@FULL_COMMIT_SHA`; the two checkouts run in order with `persist-credentials: false`; the SHA guard comes immediately before `./_vhco-runner/.github/actions/renovate`; every action is pinned to 40 hex characters; the image is pinned by digest; and scripts run through `github.action_path`. The workflow check printed only its actionlint banner and no error. Inspection of `.github/workflows/renovate.yml:25-71`, `.github/actions/renovate/action.yml:43-101`, `schedule.yml`, `manual.yml` and `examples/external/renovate.yml:10` agrees with those tests. I inspected `/tmp/vhco-review-support/ci-read.mjs` and ran it. It reported public run 44265792145, headSha 1d95e0648efeb28aaa2fcf4edd54eaeb575ce4ac, attempt 1, conclusion success. The complete `--logs` output shows runner image ubuntu-24.04 and GITHUB_TOKEN with Contents and Metadata read only. It shows the Test step at 80 pass, 0 fail and 276 expect() calls. Check workflows passed through the pinned actionlint 1.7.12 container. The native image fixture passed 1 test with 22 expect() calls against `ghcr.io/renovatebot/renovate:44.251.0-full@sha256:ccc4dc08...`. Limitations: the harness denied the local Podman native run. No live central dispatch was observed, and none is required at source level.
+
+CRITERION: AC-02 The integration rejects unsupported caller/implementation identities, debug settings and out-of-policy target selection before requesting the explicitly scoped App token, with deployment custody requirements documented.
+VERDICT: met
+EVIDENCE: In the helper `fast` run at 1d95e06, every test in `tests/policy.test.mjs` passed. The policy refuses wrong-organization, unlisted, wildcard, injected, empty and duplicate selections, malformed policies, and a mismatched callerRef, callerSha, callerWorkflowRef, event, implementationRepository, implementationWorkflow, implementationSha, implementationHead or policyHead. It also refuses debug and stepDebug, and the unsupported modes lookup, extract, TRUE and a multiline value. Refusal messages do not echo hostile input. The workflow test `validates selection and debug mode before requesting an explicitly scoped token` passed. Inspection of `prepare.mjs:31-49` shows `createRunPlan` running before any output or token step. `action.yml:63-80` takes owner and repositories from the prepare outputs, requests nine explicit permissions with no actions permission, and sets `skip-token-revoke: 'false'`. `docs/operations.md:48-58` documents the trusted-workflow-author status, installation scope, main-update restriction readback and main-only environment before the key is supplied. `docs/operations.md:187,190` document the target Actions-disabled readback with stop-without-writing. CI run 44265792145 logged the same tests passing. Limitations: live App authorization and direct-main restrictions are deployment checks under the Test Plan and were not observed.
+
+CRITERION: AC-03 The real command entry point discards private stdout/stderr while preserving success/failure, and its workflow wiring retains the private temporary-storage and environment boundary.
+VERDICT: met
+EVIDENCE: In the helper `fast` run, `tests/privacy.test.mjs` executed the real `renovate-command.sh` with a canary-printing stub. It got exit 0 and exit 23, with both streams empty. The structured action test passed: `mount-docker-socket: 'false'`, only the work-dir is mounted as /tmp, `configurationFile` is the parent-level config-file, cleanup receives private-dir, `env-regex ^(LOG_LEVEL|NO_COLOR)$` is set, and the command file goes through `github.action_path`. The real prepare.mjs fixture test passed. It shows the parent and work dir at mode 0700, the config at mode 0600, and the only chown as image UID:GID on work-dir and config-file. Inspection of `storage.mjs:6-12`, `prepare.mjs:54-58`, `cleanup.mjs` and `verify-local.mjs:46-147` confirms the shared `prepareStorage` layout. The complete CI log for run 44265792145 at 1d95e06 shows the native report with `oldConfigParentRejected: true` (EACCES through the image-owned child), `hostConfigStat: true`, `imageConfigRead: true` and `nativeOutputSuppressed: true`. In that last case, a real native invalid-platform Renovate error kept its exit status, and the wrapper's stdout and stderr were empty. `tests/native/container.test.mjs:9-22` asserts each of those fields. Limitations: Podman was denied locally, so the native evidence comes from the complete public CI log on Docker. I could not read the pinned upstream action source to confirm its host-side fs.stat directly. The outer-action public log and artifact check belongs to Lab's smoke and was not observed.
+
+CRITERION: AC-04 The pinned native image validates the runner's configuration and extracts the supported synthetic dependency formats; actual target compatibility remains an adoption check.
+VERDICT: met
+EVIDENCE: The complete CI log for run 44265792145 (headSha 1d95e06) shows `bun scripts/verify-local.mjs --pull-only` pulling the pinned digest. `bun run test:native` then passed 1 test with 22 expect() calls. The logged report shows uid 12021, gid 0 and `privateMountWritable: true`. The tool inventory was Node 24.22.3, Bun 1.4.4, Go 1.27.4, PHP 8.5.12 and Composer 2.11.2. It also shows `validConfiguration: true`, `invalidConfigurationRejected: true` and `selfConfigurationValid: true`. Extraction found composer 1, dockerfile 1, github-actions 7, gomod 2, npm 2, terraform 1 and regex 3 dependencies, 17 dependencies from 10 files in total. Inspection of `tests/native/container.test.mjs` and `verify-local.mjs:36-44,116-142` shows that missing prerequisites throw. It also shows strict validation of the generated global policy and the repository's own policy, badOption rejection, and a minimum dependency count for each of the seven managers. Limitations: the harness denied the local `CONTAINER_ENGINE=podman` run, so this verdict rests on the complete public CI log. Actual target compatibility is an adoption check and was not observed.
+
+CRITERION: AC-05 Native rate/concurrency/cadence controls and disable/retry behavior are wired and documented, with locally executable health commands that reject disabled, stale or unreadable state.
+VERDICT: met
+EVIDENCE: Inspection of `policy.mjs:77-93` shows force `schedule: []`, `commitHourlyLimit: 2`, `prConcurrentLimit: 5`, `automerge: false` and `prCommitsPerRunLimit: 0`. `schedule.yml:4,9` sets cron `23 5,17 * * *`, gated on `RENOVATE_ENABLED == 'true'`. `manual.yml:20` allows writes only when the flag is true. `renovate.yml:28-31` uses one group with `queue: max` and `cancel-in-progress: false`, plus a 55-minute timeout. In the helper `fast` run at 1d95e06, the ordered smoke and pause test passed (`tests/operations.test.mjs:49-68`). Its order is: target Actions-disabled readback and stop-without-writing, then seed, then flag reset and both entries disabled, then a second target readback, then schedule readback, then the flag set true, then reset, disable, drain and access removal on success or failure, then retry repeating step 1. It also checks the pause order of flag reset and readback before disabling both entries. All six health fixtures passed with specific outcomes: healthy exited 0; inactive, stale and api-failure exited 1; no-success exited 4; malformed exited 4 or 5 with non-empty stderr; and stdout was checked for each case. CI run 44265792145 logged the same tests passing. Limitations: queue, hourly limit and notification internals are trusted platform behavior under the Test Plan and were not exercised.
+
+CRITERION: AC-06 Every approved pilot has verified updater ownership and processing evidence through a valid dependency PR or an observed already-current result, with its remaining policies preserved.
+VERDICT: untested
+EVIDENCE: Inspection of the document at 1d95e06: the criterion is unticked with `Residual: https://github.com/vhco-pro/lab/issues/3`. The AC-06 Test Plan row assigns real pilot adoption and the single smoke to Lab, and no source check can establish them. Limitations: I did not fetch Lab issue 3. The companion Lab clone was not used as evidence for this criterion, and no live pilot or smoke was observed.
+
+CRITERION: AC-07 The shared GitVersion caller preserves tests-first, dry-run/default-off, exact-source and manual/automatic release controls, with documented source-identity and recovery checks.
+VERDICT: met
+EVIDENCE: The helper `fast` run at 1d95e06 passed all of `tests/release.test.mjs` and `tests/release-workflow.test.mjs`. The cases are: manual exact candidate; automatic main push; effective dry-run ignoring expected-sha; refusal of superseded source after unpublished, failed, published and skip-CI main; and refusal of invalid native state. It also passed these tests in `tests/operations.test.mjs`: the ordered first-publication procedure, the failed-publication disable-before-repair path with abandoned-tag preservation, and the release identity test. That test asserts that the `git diff --exit-code` paths at `docs/operations.md:111` equal the frontmatter covers, including package.json. The first-enable fixture with completed state exited 0 and recorded the RELEASE_ENABLED and exact-SHA dispatch writes. Requested, waiting, pending, queued, in_progress, unknown, incomplete and failed-read each exited 1 with no writes, and failed-read showed its fixture stderr. Inspection of `release.yml` shows ci.yml checks, then the current-main preflight, then the publisher pinned at b18de6d with dry-run unless the preflight outputs false. It has main-push and manual entries and release-wide queued concurrency. My review-time search outside docs/specs found no synthetic-caller, extra-App, key-retirement or per-manager connected prerequisite. The only matches are the prohibitions at `AGENTS.md:37` and `docs/operations.md:194`, and the production App's fixture-access cleanup. CI run 44265792145 logged the same tests passing. Limitations: actual version calculation, tag and release readback, and source identity are separately approved delivery steps and were not observed. Other checks I ran: `vh-adlc lint` passed. `vh-adlc fresh` reports R-22 fresh, with default branch main, and R-24 stale (covered-changed). `vh-adlc gate complete` fails on all_met, impl_review_fresh, impl_review_clean and on_feature_branch_if_set, the last because the clone is a detached HEAD. `git diff --check` over the last three commits was clean, and the tree was clean.
+
 ## Sources
 
 - [Official Renovate Action](https://github.com/renovatebot/github-action) provides the supported action/container and executable command-file interface.
@@ -1030,3 +1190,4 @@ NO FINDINGS
 - [Native repository-local composite actions](https://docs.github.com/en/actions/tutorials/create-actions/create-a-composite-action#creating-a-composite-action-within-the-same-repository) support a literal local uses path after the workflow’s exact-source checkout.
 
 - [Native workflow-run status values](https://docs.github.com/en/rest/actions/workflow-runs#list-workflow-runs-for-a-workflow) include pending, requested and waiting as well as queued and in_progress; first enablement checks the unfiltered complete run list for completed status.
+- [Pinned official action config validation](https://github.com/renovatebot/github-action/blob/acdd6bda8b035c99ce59d5675816af2aa65a1774/src/renovate.ts) performs host-side fs.stat before binding the config into Docker; the owned-volume probe established the required host/container ownership layout.
