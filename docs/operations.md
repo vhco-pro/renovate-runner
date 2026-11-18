@@ -44,6 +44,9 @@ Use the complete [external caller example](../examples/external/renovate.yml) an
 Replace `FULL_COMMIT_SHA` with an independently verified release commit and record its version in the comment. Replace the invented example-org/example-repository policy entry with your selected owned repository.
 The external caller owns its environment, App key, billing and concurrency boundary.
 The central callers use the same local reusable workflow and committed target policy.
+Every caller explicitly passes RENOVATE_APP_PRIVATE_KEY by name, including when the value exists only in the selected environment.
+GitHub otherwise supplies an empty string to a reusable workflow even when its job selects that environment.
+The reusable workflow requires that named secret, and the environment value takes precedence over a repository or organization value.
 
 The selected App is a trusted workflow author. Its Contents and Workflows access can author jobs that request GitHub job tokens and OIDC.
 Scope the installation to the reviewed repositories and provision the key only after checking their signing, publication and external federation boundaries.
