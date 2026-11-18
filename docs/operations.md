@@ -13,7 +13,7 @@ Lab owns a single integration smoke after reviewed source integration and the ve
 
 ## Local verification
 
-Use the Bun version declared in [package.json](../package.json), Git, and Docker or rootless Podman.
+Use the Bun version declared in [package.json](../package.json), Git, Bash, jq, and Docker or rootless Podman. The operations fixtures check Bash/jq availability before running; their child commands use owned temporary directories and include stderr in failure diagnostics.
 The workflow checker requires actionlint at the version in its pinned image. When absent, it announces a Docker fallback.
 The current actionlint release needs two narrow compatibility filters for GitHub.com's native defining-workflow context and concurrency queue fields.
 Other lint errors still fail.

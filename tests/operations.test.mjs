@@ -1,7 +1,12 @@
 import { expect, test } from 'bun:test';
 import { chmodSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { resolve } from 'node:path';
+import { dirname, resolve } from 'node:path';
+
+const bash = Bun.which('bash');
+const jq = Bun.which('jq');
+if (!bash || !jq) throw new Error('Operations tests require Bash and jq on PATH');
+const fixturePath = directory => `${directory}:${dirname(jq)}:/usr/bin:/bin`;
 
 const root = resolve(import.meta.dir, '..');
 const read = (name) => readFileSync(resolve(root, name), 'utf8');
@@ -104,13 +109,19 @@ test.each(['healthy', 'inactive', 'stale', 'no-success', 'api-failure', 'malform
       const runs = [{ workflow_runs: [{ event: 'schedule', conclusion: scenario === 'no-success' ? 'failure' : 'success',
         updated_at: new Date(Date.now() - age * 3600_000).toISOString().replace(/\.\d+Z$/, 'Z') }] }];
       writeFileSync(resolve(directory, 'runs.json'), scenario === 'malformed' ? 'not-json' : JSON.stringify(runs));
-      const result = Bun.spawnSync(['bash', '-c', script], {
-        cwd: directory, env: { PATH: `${directory}:/usr/bin:/bin`, HOME: directory,
+      const result = Bun.spawnSync([bash, '-c', script], {
+        cwd: directory, env: { PATH: fixturePath(directory), HOME: directory, TMPDIR: directory,
           HEALTH_SCENARIO: scenario, HEALTH_RUNS: resolve(directory, 'runs.json'),
           HEALTH_WORKFLOW: resolve(directory, 'workflow.json') }, stdout: 'pipe', stderr: 'pipe',
       });
-      if (scenario === 'healthy') expect(result.exitCode).toBe(0);
-      else expect(result.exitCode).not.toBe(0);
+      if (scenario === 'healthy') expect(result.exitCode, result.stderr.toString()).toBe(0);
+      else {
+        if (scenario === 'malformed') {
+          expect([4, 5], result.stderr.toString()).toContain(result.exitCode);
+          expect(result.stderr.toString()).not.toBe('');
+        } else expect(result.exitCode, result.stderr.toString()).toBe(scenario === 'no-success' ? 4 : 1);
+        expect(result.stdout.toString().trim()).toBe(scenario === 'inactive' ? 'false' : scenario === 'stale' ? 'true\nfalse' : 'true');
+      }
     } finally {
       rmSync(directory, { recursive: true });
     }
@@ -128,7 +139,7 @@ if [ "$1" = api ]; then
   for argument in "$@"; do
     case "$argument" in
       */git/ref/heads/main) printf '%s\\n' "$RELEASE_SHA"; exit 0;;
-      */release.yml/runs*) test "$FIXTURE_STATE" != failed-read || exit 1; cat "$FIXTURE_RUNS"; exit 0;;
+      */release.yml/runs*) if test "$FIXTURE_STATE" = failed-read; then echo "Fixture API read failed" >&2; exit 1; fi; cat "$FIXTURE_RUNS"; exit 0;;
     esac
   done
   exit 99
@@ -140,18 +151,20 @@ printf '%s\\n' "$*" >> "$FIXTURE_WRITES"
         workflow_runs: [{ id: 1, status: state === 'incomplete' ? 'completed' : state }] }]));
       const writes = resolve(directory, 'writes');
       writeFileSync(writes, '');
-      const result = Bun.spawnSync(['bash', '-c', script], {
-        cwd: directory, env: { PATH: `${directory}:/usr/bin:/bin`, HOME: directory,
+      const result = Bun.spawnSync([bash, '-c', script], {
+        cwd: directory, env: { PATH: fixturePath(directory), HOME: directory, TMPDIR: directory,
           REPOSITORY: 'example-org/runner', RELEASE_SHA: 'a'.repeat(40), FIXTURE_STATE: state,
           FIXTURE_RUNS: resolve(directory, 'runs.json'), FIXTURE_WRITES: writes }, stdout: 'pipe', stderr: 'pipe',
       });
       if (state === 'completed') {
-        expect(result.exitCode).toBe(0);
+        expect(result.exitCode, result.stderr.toString()).toBe(0);
         const commands = readFileSync(writes, 'utf8');
         expect(commands).toContain('variable set RELEASE_ENABLED --body true');
         expect(commands).toContain(`workflow run release.yml --ref main -f dry-run=false -f expected-sha=${'a'.repeat(40)}`);
       } else {
-        expect(result.exitCode).not.toBe(0);
+        expect(result.exitCode, result.stderr.toString()).toBe(1);
+        if (state === 'failed-read') expect(result.stderr.toString()).toContain('Fixture API read failed');
+        else expect(result.stdout.toString().trim()).toBe('false');
         expect(readFileSync(writes, 'utf8')).toBe('');
       }
     } finally {

@@ -28,7 +28,7 @@ Implementation, repository publication, App permissions and live scheduler activ
 
 ## Verification
 
-Use the exact Bun runtime in package.json. Run `bun run test`, `bun run check:workflows` and `git diff --check`.
+Use the exact Bun runtime in package.json, Git, Bash and jq. Run `bun run test`, `bun run check:workflows` and `git diff --check`.
 Native changes also run `bun scripts/verify-local.mjs --pull-only`, then `bun run test:native`.
 On Fedora, set `CONTAINER_ENGINE=podman` for both native commands.
 The offline native check uses only invented fixtures and owned temporary resources.
