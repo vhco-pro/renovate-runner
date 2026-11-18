@@ -77,6 +77,15 @@ A manual publish names its expected candidate SHA, which the preflight must matc
 
 ### Background
 
+On November 18, the owner required zero private Actions minutes for this runner work and questioned the size of the proposed connected fixture setup.
+The three-repository fixture grant has not been approved, and no fixture App, key or repository has been created.
+The current connected test matrix is being reconsidered before any such setup.
+The proposed smaller scope checks this integration's App access, actual workflow execution, one representative dependency PR, and private-output/failure handling.
+Test execution would stay in the public runner, with Actions disabled on a disposable private target so bot pushes and PRs cannot consume private minutes.
+The proposal removes exhaustive manager, rate-limit, queue and retry verification of upstream Renovate behavior.
+It retains existing local/native results and independent review of the integration.
+This Context records owner steering and a proposal; the normative Design, Test Plan and acceptance criteria below have not yet been revised or declared satisfied.
+
 The official action supports an executable Docker command file and a selected Renovate container.
 Renovate supports App installation tokens, explicit repository lists and native per-repository update limits.
 The selected self-operated execution model is recorded in AGENTS.md alongside its exception to the pinned shared docs' managed-App preference. [Official action](https://github.com/renovatebot/github-action), [GitHub platform](https://docs.renovatebot.com/modules/platform/github/), [Update limits](https://docs.renovatebot.com/configuration-options/)
