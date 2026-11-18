@@ -303,6 +303,7 @@ None.
 | 2026-11-17 | R-16 | spec | `0f04733032f579f54a79d7b37666857f0294e3c9` | n/a | n/a | accepted by owner |
 | 2026-11-18 | R-17 | spec | `d6a1ac414334b5a1fa763656010807f43ae845d4` | claude-opus-5-5 | structural | Five should-fix findings and two nits; first-party model attested, original/clone/companion snapshots preserved under read-only mounts; lint/fresh/gate observed, other checks partly denied. |
 | 2026-11-18 | R-18 | spec | `c890f15e166e5dc28e8f597c9573ab3769105233` | claude-opus-5-5 | structural | Three should-fix findings and one nit; first-party model attested and read-only snapshots matched; lint/fresh/gate/next observed, no native execution or live checks. |
+| 2026-11-18 | R-19 | spec | `b76a3d1608a5b29bb487ef3f8c69443d3d1004d5` | claude-opus-5-5 | structural | Focused source-path and owner-summary corrections; diagnostic citation nit. |
 
 ### R-1
 
@@ -938,6 +939,40 @@ SEVERITY: nit
 WHERE: Design, Staged integration smoke in Lab (lines 173 and 178); Context, Owner summary (lines 38 and 42)
 EVIDENCE: The document calls the target "one disposable private target" (line 38). Line 178 says only that "no existing repository or workload is deleted", so it never says what happens to `vhco-pro/renovate-fixture-a`, its dependency PR or its Actions setting after the smoke. Lab plan line 144 decides this: "Keep the test repository and its synthetic PR for review/evidence after retiring its App access; deletion needs separate approval" and "The zero-private-CI policy keeps Actions disabled after smoke or rollback". Nothing in the component changes, because Lab owns the live steps, but "disposable" reads as a deletion that Lab says needs separate approval. Checks run and limitations: as in F-01.
 PROPOSAL: Add one sentence saying the fixture repository and its PR are retained with Actions still disabled, and that deletion needs separate approval, matching the Lab plan.
+
+### R-19
+
+FINDING: F-01
+KIND: factual
+SEVERITY: should-fix
+WHERE: Frontmatter `covers` (lines 7 to 16); Design, Component release and source identity (line 207); Test Plan row AC-07 (line 251); Tasks T12 (line 276)
+EVIDENCE: This revision added `package.json` to `covers` in response to R-18 F-01. That finding's proposal was aimed at the release identity diff. Line 207 says the release source is valid when "tracked contents over this feature's `covers` are unchanged from review". The command that puts this into practice, `docs/operations.md:112`, still diffs only `.github/workflows/ .github/actions/renovate/ config/ scripts/ tests/ examples/ renovate.json docs/operations.md` and leaves out `package.json`. T12 edits `docs/operations.md`, but its done condition lists only smoke procedure tests, the native ownership regression, lint, secret scan and public CI. The AC-07 row says only "Inspect exact tag/run/review/integration identity comparisons". So an implementation could keep the stale path list, and AC-07 would still pass while a change to the Bun version or test scripts in `package.json` goes unnoticed between review and release. Checks run: read the reviewer agent file, the pinned `conventions/feature-documents.md` (with the Read tool, from the docs cache at 0c983f6), AGENTS.md, the whole document including R-17 and R-18, and `git diff c890f15 b76a3d1` (only the document changed). Also read `.github/actions/renovate/action.yml`, prepare.mjs, cleanup.mjs, renovate-command.sh, renovate.yml, manual.yml, config/targets.json, examples/external/config/targets.json, docs/operations.md, a grep of tests/ and scripts/ for ownership and mount assertions, and a grep of the Lab plan `docs/internal/plans/opnsense-encrypted-backup.md` for the smoke steps. `git rev-parse HEAD` matched the target and `git status --short` was clean. `vh-adlc lint` returned pass. `vh-adlc fresh` reported R-18 at c890f15 stale (baseline-changed), no implementation review and a clean feature tree. `vh-adlc gate planned` failed on spec_review_fresh, accepted and on_feature_branch_if_set (the clone is on a detached HEAD). `vh-adlc next` returned owner decision (rule 2, branch). Limitations: Bash was denied for reading the docs cache through the shell, for printing the remaining workflows and package.json together, and for `bun run test`. `vh-adlc review check` printed only a usage result for `--help` and was not run on records. `bun run check:workflows`, `git diff --check`, the native suite, `gh`, web fetches (including the pinned github-action `src/renovate.ts`), historical CI run 44190212437 and Lab issue 3 were not run or observed. No source, ref, provider, App, credential, issue, CI run or release was changed.
+PROPOSAL: Add to T12's done condition, and to the AC-07 row, that the release identity diff in `docs/operations.md` covers exactly the `covers` paths, including `package.json`, and that `tests/operations.test.mjs` checks this.
+
+FINDING: F-02
+KIND: factual
+SEVERITY: should-fix
+WHERE: Context, Owner summary (lines 32 to 35 and 55); Design, Authentication and execution (lines 130 to 133); Test Plan row AC-03 (line 247); Tasks T12 (line 276)
+EVIDENCE: Line 55 says "This revision changes verification and rollout prerequisites, not the selected runtime permission set or release controls." But this revision also changes runtime source. Lines 131 to 133 replace the private storage layout with a host-owned parent, an image-owned working child and a separate config file bind. T12 now edits `.github/actions/renovate/` to "fix the measured host config-stat access". In the tree, `prepare.mjs:53-58` writes the config inside the run directory, sets that directory to mode 0700 and chowns it to the image UID. If the design is right, the currently implemented action fails host-side config validation before Docker starts, so the first live run would fail. The pinned convention says the summary must "Explain material changes since the last accepted scope" and must be refreshed before asking for acceptance. The summary never mentions this defect or its repair, so the owner would accept believing the action source is unchanged apart from verification. This change was made in this revision. Checks run and limitations: as in F-01.
+PROPOSAL: Add one or two sentences to the Owner summary: the accepted layout fails the official action's host-side config check, the revision changes the private storage layout to fix it without widening data access, and the native regression proves it locally.
+
+FINDING: F-03
+KIND: factual
+SEVERITY: nit
+WHERE: Design, Authentication and execution (line 132); Sources (line 968)
+EVIDENCE: Line 132 says "A local owned-volume probe reproduced EACCES with the old image-owned parent, then verified host stat and container read with the separate-file bind layout." The pinned convention requires Design claims to cite "a `file:line`, or a command and its output, gathered when the claim was written". The document gives no command, engine, image digest or observed output for this probe, and no committed test or script reproduces it yet (a grep of tests/ and scripts/ for EACCES or config-file returns nothing). The Sources entry cites only the upstream `fs.stat` call. The claim matches POSIX directory search rules for a non-owner on a 0700 directory, so it changes nothing that is built. This was added in this revision. Checks run and limitations: as in F-01.
+PROPOSAL: Record the probe command, engine and observed EACCES and success outputs next to line 132, or mark the claim as reasoning until the T12 native regression records it.
+
+---
+
+Notes for the dispatcher:
+
+- **Not executed (denied):** Bash was denied for `bun run test` and for printing the remaining workflows and `package.json`. `bun run check:workflows`, `git diff --check`, `verify-local.mjs --pull-only` and `test:native` were never run.
+- **Not observed:** `gh` queries, web fetches (including the pinned upstream `src/renovate.ts` named in Sources), historical CI run 44190212437 and Lab issue 3.
+- **Review check:** `vh-adlc review check` was only probed with `--help`, which returned a usage result. It was never run on records.
+- **Gate:** the `on_feature_branch_if_set` failure comes from the detached HEAD in the clone. The `spec_review_fresh` and `accepted` failures are expected for a draft whose baseline changed.
+- **R-18 follow-up:** all four R-18 findings were addressed in this revision. F-01 above follows on from the R-18 F-01 change.
+- **Lab:** the Lab plan's smoke steps (lines 217 to 222) agree with this document. Nothing was created or changed.
 
 ## Sources
 
