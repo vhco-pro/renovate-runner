@@ -17,8 +17,8 @@ flowchart LR
     Private --> Review
 ```
 
-The [accepted feature](docs/specs/shared-renovate-runner.md) is in progress.
-Local tests include the pinned native image. Independent implementation review remains pending. Lab owns one live integration smoke after the verified first release, with private target Actions disabled.
+The [source feature](docs/specs/shared-renovate-runner.md) has passing local/public checks and an independent Opus 5.5 review.
+Lab owns one live integration smoke after the verified first release, with private target Actions disabled.
 Scheduling and release publication are disabled.
 
 ## Use and operate
