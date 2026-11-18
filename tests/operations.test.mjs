@@ -43,13 +43,15 @@ test('delivery readback binds tag and run to the reviewed source and covers ever
 
 test('the single smoke is isolated from cron and stops before repair or real adoption', () => {
   const smoke = section(read('docs/operations.md'), 'Single integration smoke');
-  ordered(smoke, ['target Actions disabled', 'Seed one npm', 'RENOVATE_ENABLED=false',
+  ordered(smoke, ['target Actions disabled', 'if not disabled, stop without writing', 'Seed one npm', 'RENOVATE_ENABLED=false',
     'disable schedule.yml and manual.yml', 'Enable only manual.yml',
+    'read back target Actions disabled again', 'if not disabled, stop without writing',
     'read back schedule.yml disabled', 'RENOVATE_ENABLED=true',
     'On success or failure', 'reset RENOVATE_ENABLED=false', 'disable both entries',
     'cancel/drain', 'Remove fixture App access', 'A failed check holds real-target adoption', 'repeat the entire smoke setup']);
   expect(smoke).toContain('Retain the test repository/PR with Actions disabled');
   expect(smoke).toContain('valid one-target placeholder');
+  expect(smoke).toContain('Every retry begins by repeating step 1');
   ordered(section(read('docs/operations.md'), 'Stop and recover dependency runs'), [
     'reset RENOVATE_ENABLED=false', 'read back false', 'disabling schedule.yml and manual.yml',
     'Read back both disabled', 'cancel/drain',
