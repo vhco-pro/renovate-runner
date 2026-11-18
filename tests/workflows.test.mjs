@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test';
-import { chmodSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { chmodSync, mkdirSync, mkdtempSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { resolve } from 'node:path';
 
@@ -39,6 +39,25 @@ describe('central callers', () => {
     expect(manual.on.workflow_dispatch.inputs.mode.options).toEqual(['full', 'write']);
     expect(manual.on.workflow_dispatch.inputs.mode.default).toBe('full');
   });
+});
+
+test('the generic external example matches the reusable workflow interface', () => {
+  const example = read('examples/external/renovate.yml');
+  const workflow = read('.github/workflows/renovate.yml');
+  const caller = example.jobs.renovate;
+  expect(caller.uses).toBe('vhco-pro/renovate-runner/.github/workflows/renovate.yml@FULL_COMMIT_SHA');
+  expect(example.permissions).toEqual({ contents: 'read' });
+  expect(example.on).toHaveProperty('workflow_dispatch');
+  for (const [name, value] of Object.entries(caller.with)) {
+    expect(workflow.on.workflow_call.inputs).toHaveProperty(name);
+    expect(typeof value).toBe(workflow.on.workflow_call.inputs[name].type);
+  }
+  for (const [name, input] of Object.entries(workflow.on.workflow_call.inputs)) {
+    if (input.required) expect(caller.with).toHaveProperty(name);
+  }
+  expect(caller.with.mode).toBe('full');
+  const policy = JSON.parse(readFileSync(new URL('../examples/external/config/targets.json', import.meta.url), 'utf8'));
+  expect(policy).toEqual({ organization: 'example-org', repositories: ['example-org/example-repository'] });
 });
 
 describe('defining workflow source and credential boundary', () => {
@@ -109,10 +128,65 @@ describe('defining workflow source and credential boundary', () => {
     expect(run.with['renovate-image']).toMatch(/^ghcr\.io\/renovatebot\/renovate:\d+\.\d+\.\d+-full@sha256:[a-f0-9]{64}$/);
     expect(run.with['mount-docker-socket']).toBe('false');
     expect(run.with['docker-user']).toBe('${{ steps.prepare.outputs.docker-user }}');
-    expect(run.with['docker-volumes']).toBe('${{ steps.prepare.outputs.private-dir }}:/tmp');
+    expect(run.with['docker-volumes']).toBe('${{ steps.prepare.outputs.work-dir }}:/tmp');
+    expect(run.with.configurationFile).toBe('${{ steps.prepare.outputs.config-file }}');
+    const cleanup = steps.find(step => step.name === 'Remove private working data');
+    expect(cleanup.env.PRIVATE_DIRECTORY).toBe('${{ steps.prepare.outputs.private-dir }}');
     expect(run.with['env-regex']).toBe('^(LOG_LEVEL|NO_COLOR)$');
     expect(run.with['additional-env-list']).toBeUndefined();
     expect(run.with['docker-cmd-file']).toBe('${{ github.action_path }}/scripts/renovate-command.sh');
     expect(run.env.LOG_LEVEL).toBe('info');
   });
+});
+
+// Exercise the real preparer without root, a network connection or App credentials.
+test('preparation keeps the config parent host-owned and limits image ownership to config and work', () => {
+  const directory = mkdtempSync(resolve(tmpdir(), 'vhco-prepare-test-'));
+  try {
+    const workspace = resolve(directory, 'workspace');
+    const bin = resolve(directory, 'bin');
+    const runnerTemp = resolve(directory, 'runner-temp');
+    for (const path of [workspace, bin, runnerTemp]) mkdirSync(path, { mode: 0o700 });
+    const gitEnv = { PATH: process.env.PATH, HOME: directory, GIT_CONFIG_GLOBAL: '/dev/null', GIT_CONFIG_NOSYSTEM: '1' };
+    const git = (...args) => {
+      const r = Bun.spawnSync(['git', ...args], { env: gitEnv, stdout: 'pipe', stderr: 'pipe' });
+      if (r.exitCode) throw new Error(r.stderr.toString());
+      return r.stdout.toString().trim();
+    };
+    const heads = [];
+    for (const name of ['_vhco-policy', '_vhco-runner']) {
+      const path = resolve(workspace, name);
+      mkdirSync(resolve(path, 'config'), { recursive: true });
+      writeFileSync(resolve(path, 'config/targets.json'), JSON.stringify({ organization: 'example-org', repositories: ['example-org/fixture'] }));
+      git('init', '--initial-branch=main', path);
+      git('-C', path, 'add', '.');
+      git('-C', path, '-c', 'user.name=Fixture', '-c', 'user.email=fixture@example.invalid', 'commit', '-m', 'Invented fixture');
+      heads.push(git('-C', path, 'rev-parse', 'HEAD'));
+    }
+    writeFileSync(resolve(bin, 'docker'), '#!/bin/sh\ncase "$*" in *-u) echo 12021;; *-g) echo 0;; *) exit 90;; esac\n');
+    writeFileSync(resolve(bin, 'sudo'), '#!/bin/sh\nprintf "%s\\n" "$@" >> "$HOME/chown-args"\n');
+    for (const name of ['docker', 'sudo']) chmodSync(resolve(bin, name), 0o700);
+    const output = resolve(directory, 'outputs');
+    writeFileSync(output, '');
+    const result = Bun.spawnSync([process.execPath, '.github/actions/renovate/scripts/prepare.mjs'], {
+      cwd: resolve(import.meta.dir, '..'),
+      env: { ...gitEnv, PATH: `${bin}:${process.env.PATH}`, RUNNER_TEMP: runnerTemp, GITHUB_WORKSPACE: workspace, GITHUB_OUTPUT: output,
+        CALLER_REPOSITORY: 'example-org/caller', CALLER_REF: 'refs/heads/main', CALLER_SHA: heads[0],
+        CALLER_WORKFLOW_REF: 'example-org/caller/.github/workflows/manual.yml@refs/heads/main', CALLER_EVENT: 'workflow_dispatch',
+        IMPLEMENTATION_REPOSITORY: 'vhco-pro/renovate-runner', IMPLEMENTATION_SHA: heads[1], IMPLEMENTATION_WORKFLOW: '.github/workflows/renovate.yml' },
+      stdout: 'pipe', stderr: 'pipe',
+    });
+    expect(result.exitCode).toBe(0);
+    const values = Object.fromEntries(readFileSync(output, 'utf8').trim().split('\n').map(line => line.split('=')));
+    expect(values['work-dir']).toBe(resolve(values['private-dir'], 'work'));
+    expect(values['config-file']).toBe(resolve(values['private-dir'], 'renovate.json'));
+    expect(statSync(values['private-dir']).mode & 0o777).toBe(0o700);
+    expect(statSync(values['work-dir']).mode & 0o777).toBe(0o700);
+    expect(statSync(values['config-file']).mode & 0o777).toBe(0o600);
+    const chown = readFileSync(resolve(directory, 'chown-args'), 'utf8').trim().split('\n');
+    expect(chown).toEqual(['chown', '-R', '--no-dereference', '12021:0', '--', values['work-dir'], values['config-file']]);
+    expect(JSON.parse(readFileSync(values['config-file'], 'utf8')).repositories).toEqual(['example-org/fixture']);
+  } finally {
+    rmSync(directory, { recursive: true });
+  }
 });

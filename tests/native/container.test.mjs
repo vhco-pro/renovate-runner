@@ -6,6 +6,9 @@ test('the pinned full image validates configuration and extracts the supported s
   console.info(JSON.stringify(report, null, 2));
   expect(report.uid).toBeGreaterThan(0);
   expect(report.privateMountWritable).toBe(true);
+  expect(report.oldConfigParentRejected).toBe(true);
+  expect(report.hostConfigStat).toBe(true);
+  expect(report.imageConfigRead).toBe(true);
   expect(report.validConfiguration).toBe(true);
   expect(report.selfConfigurationValid).toBe(true);
   expect(report.invalidConfigurationRejected).toBe(true);

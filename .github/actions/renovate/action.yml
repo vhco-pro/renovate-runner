@@ -86,7 +86,7 @@ runs:
         renovate-image: ghcr.io/renovatebot/renovate:44.251.0-full@sha256:ccc4dc0852667fdbd6b32273d58a247e8b97f7c3a629b1ccd4e4b8712c0b8e2c
         mount-docker-socket: 'false'
         docker-user: ${{ steps.prepare.outputs.docker-user }}
-        docker-volumes: ${{ steps.prepare.outputs.private-dir }}:/tmp
+        docker-volumes: ${{ steps.prepare.outputs.work-dir }}:/tmp
         env-regex: ^(LOG_LEVEL|NO_COLOR)$
         docker-cmd-file: ${{ github.action_path }}/scripts/renovate-command.sh
       env:

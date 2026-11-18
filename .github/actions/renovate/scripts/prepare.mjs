@@ -1,7 +1,8 @@
 import { execFileSync } from 'node:child_process';
-import { appendFileSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
+import { appendFileSync, mkdtempSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { createRunPlan } from './policy.mjs';
+import { prepareStorage } from './storage.mjs';
 
 const commandEnv = {
   PATH: process.env.PATH,
@@ -52,14 +53,14 @@ try {
   if (!/^[1-9][0-9]*$/.test(uid) || !/^[0-9]+$/.test(gid)) throw new Error('Invalid non-root image identity');
   const directory = mkdtempSync(resolve(runnerTemp, 'vhco-renovate-'));
   appendFileSync(output, `private-dir=${directory}\n`);
-  const configFile = resolve(directory, 'renovate.json');
-  writeFileSync(configFile, `${JSON.stringify(plan.config, null, 2)}\n`, { mode: 0o600 });
+  const { workDirectory, configFile } = prepareStorage(directory, plan.config);
   run('chmod', ['0700', directory]);
-  run('sudo', ['chown', '-R', '--no-dereference', `${uid}:${gid}`, '--', directory]);
+  run('sudo', ['chown', '-R', '--no-dereference', `${uid}:${gid}`, '--', workDirectory, configFile]);
   appendFileSync(output, [
     `organization=${plan.organization}`,
     `repositories=${plan.repositoryNames.join(',')}`,
     `config-file=${configFile}`,
+    `work-dir=${workDirectory}`,
     `docker-user=${uid}:${gid}`,
     '',
   ].join('\n'));

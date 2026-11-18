@@ -18,7 +18,7 @@ flowchart LR
 ```
 
 The [accepted feature](docs/specs/shared-renovate-runner.md) is in progress.
-Local tests include the pinned native image. Connected GitHub tests and independent implementation review remain pending.
+Local tests include the pinned native image. Independent implementation review remains pending. Lab owns one live integration smoke after the verified first release, with private target Actions disabled.
 Scheduling and release publication are disabled.
 
 ## Use and operate
@@ -27,7 +27,7 @@ Scheduling and release publication are disabled.
 - [Local verification](docs/operations.md#local-verification)
 - [App access and trust](docs/operations.md#adoption-and-trust)
 - [Scheduler health and recovery](docs/operations.md#scheduler-health)
-- [Release verification and credential retirement](docs/operations.md#release-identity)
+- [Release verification and staged adoption](docs/operations.md#release-identity)
 
 The component uses the shared GitVersion release workflow.
 External consumers pin a verified release commit. No release has been published yet.

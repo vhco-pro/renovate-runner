@@ -24,20 +24,40 @@ test('the first-publication procedure holds main before reading state and enable
   expect(first).toContain('Any failed or incomplete API read stops this sequence');
 });
 
-test('delivery readback binds the tag, run and caller to one reviewed source', () => {
+test('delivery readback binds tag and run to the reviewed source and covers every release input', () => {
   const source = read('docs/operations.md');
   const identity = section(source, 'Release identity');
   for (const command of ['merge-base --is-ancestor "$REVIEW_SHA" "$INTEGRATION_SHA"',
     'merge-base --is-ancestor "$INTEGRATION_SHA" "$RELEASE_SHA"',
     'git diff --exit-code "$REVIEW_SHA" "$RELEASE_SHA" --',
     '"refs/tags/${TAG}^{}"', 'test "$TAG_SHA" = "$RELEASE_SHA"',
-    'test "$RUN_SHA" = "$RELEASE_SHA"', 'test "$CALLER_SHA" = "$RELEASE_SHA"']) {
+    'test "$RUN_SHA" = "$RELEASE_SHA"']) {
     expect(identity).toContain(command);
   }
-  ordered(section(source, 'Delivery and credential retirement'), [
-    'Read back the first public release', 'Run the external caller',
-    'Retire fixture credentials', 'Grant production access',
+  const spec = read('docs/specs/shared-renovate-runner.md');
+  const covers = Bun.YAML.parse(spec.split('---')[1]).covers;
+  const paths = identity.match(/git diff --exit-code[^\n]+ -- (.+)/)[1].trim().split(/\s+/);
+  expect(paths).toEqual(covers);
+
+});
+
+test('the single smoke is isolated from cron and stops before repair or real adoption', () => {
+  const smoke = section(read('docs/operations.md'), 'Single integration smoke');
+  ordered(smoke, ['target Actions disabled', 'Seed one npm', 'RENOVATE_ENABLED=false',
+    'disable schedule.yml and manual.yml', 'Enable only manual.yml',
+    'read back schedule.yml disabled', 'RENOVATE_ENABLED=true',
+    'On success or failure', 'reset RENOVATE_ENABLED=false', 'disable both entries',
+    'cancel/drain', 'Remove fixture App access', 'A failed check holds real-target adoption', 'repeat the entire smoke setup']);
+  expect(smoke).toContain('Retain the test repository/PR with Actions disabled');
+  expect(smoke).toContain('valid one-target placeholder');
+  ordered(section(read('docs/operations.md'), 'Stop and recover dependency runs'), [
+    'reset RENOVATE_ENABLED=false', 'read back false', 'disabling schedule.yml and manual.yml',
+    'Read back both disabled', 'cancel/drain',
   ]);
+  const activation = section(read('docs/operations.md'), 'Real-target activation');
+  ordered(activation, ['Grant production access', 'RENOVATE_ENABLED=false', 'full dry-run',
+    'enables schedule.yml and manual.yml', 'RENOVATE_ENABLED=true last',
+    'On a failed pilot', 'reset the flag', 'drain their runs', 'restoring the recorded predecessor']);
 });
 
 test('failed initial publication has a disable-before-repair path and preserves abandoned tags', () => {
@@ -58,10 +78,10 @@ test('health commands include inactive scheduling, stale success and native canc
     'gh workflow enable schedule.yml', 'notification recipient']) expect(health).toContain(phrase);
 });
 
-test('documentation separates local proof and future connected permissions', () => {
+test('documentation separates local source proof and the future integration smoke', () => {
   const source = read('docs/operations.md');
   for (const phrase of ['trusted workflow author', 'operational pause', 'no App credentials',
-    'fixture-only App', 'Rootless Podman', 'no Terraform or OpenTofu CLI']) expect(source).toContain(phrase);
+    'single integration smoke', 'Rootless Podman', 'no Terraform or OpenTofu CLI']) expect(source).toContain(phrase);
   expect(read('README.md')).toContain('```mermaid');
   expect(read('LICENSE')).toContain('Apache License');
   expect(read('LICENSE')).toContain('VH & Co BV');

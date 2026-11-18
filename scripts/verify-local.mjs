@@ -1,8 +1,9 @@
-import { cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { resolve } from 'node:path';
 import { randomUUID } from 'node:crypto';
 import { createRunPlan } from '../.github/actions/renovate/scripts/policy.mjs';
+import { prepareStorage } from '../.github/actions/renovate/scripts/storage.mjs';
 
 function nativeImage() {
   const path = resolve(import.meta.dir, '../.github/actions/renovate/action.yml');
@@ -43,9 +44,9 @@ export function verifyLocal() {
   }
 
   const directory = mkdtempSync(resolve(tmpdir(), 'vhco-renovate-native-'));
-  const privateData = resolve(directory, 'private');
+  let privateData, globalFile;
   const initialize = () => {
-    mkdirSync(privateData, { mode: 0o700 });
+    ({workDirectory: privateData, configFile: globalFile} = prepareStorage(directory, {}));
     const fixture = resolve(privateData, 'fixture');
     cpSync(resolve(root, 'tests/fixtures/native/repository'), fixture, { recursive: true });
     mkdirSync(resolve(fixture, '.github/actions/renovate'), { recursive: true });
@@ -79,7 +80,7 @@ export function verifyLocal() {
         implementationHead: sha, policyHead: sha,
       },
     }).config;
-    writeFileSync(resolve(privateData, 'global.json'), JSON.stringify(global), { mode: 0o600 });
+    writeFileSync(globalFile, JSON.stringify(global), { mode: 0o600 });
     writeFileSync(resolve(privateData, 'invalid.json'), JSON.stringify({ badOption: true }), { mode: 0o600 });
   };
   const ownedNames = new Set();
@@ -91,7 +92,8 @@ export function verifyLocal() {
     // Podman's :U changes only this owned fixture volume. A custom keep-id
     // mapping can require a copy of the entire full image's filesystem.
     if (engine === 'podman') flags.push('--security-opt', 'label=disable');
-    flags.push('--volume', `${privateData}:/work:${engine === 'podman' ? 'rw,U' : 'rw'}`, '--workdir', '/work/fixture',
+    flags.push('--volume', `${privateData}:/work:${engine === 'podman' ? 'rw,U' : 'rw'}`,
+      '--volume', `${globalFile}:/global.json:ro`, '--workdir', '/work/fixture',
       '--env', 'NO_COLOR=1', '--env', 'CHECKPOINT_DISABLE=1');
     for (const [key, value] of Object.entries(env)) flags.push('--env', `${key}=${value}`);
     flags.push('--entrypoint', entrypoint, digestReference, ...args);
@@ -106,13 +108,23 @@ export function verifyLocal() {
   try {
     initialize();
     if (engine === 'docker') {
-      checked(['sudo', 'chown', '-R', '--no-dereference', `${uid}:${gid}`, '--', privateData]);
       ownershipChanged = true;
+      checked(['sudo', 'chown', '-R', '--no-dereference', `${uid}:${gid}`, '--', privateData, globalFile]);
+    } else {
+      checked([...engineCommand, 'unshare', 'chown', `${uid}:${gid}`, '--', globalFile]);
     }
     const inventory = container('node', ['/work/inventory.mjs']);
     if (inventory.code !== 0) throw new Error(`Inventory failed\n${inventory.stderr}`);
     const report = JSON.parse(inventory.stdout.trim());
-    const valid = container('renovate-config-validator', ['--strict', '/work/global.json']);
+    // The official action stats its config on the host before binding it.
+    // The image-owned child reproduces the old EACCES boundary as a control.
+    let oldError;
+    try { statSync(resolve(privateData, 'self-renovate.json')); } catch (error) { oldError = error.code; }
+    report.oldConfigParentRejected = oldError === 'EACCES';
+    report.hostConfigStat = statSync(globalFile).isFile();
+    const configRead = container('node', ['-e', 'const c=JSON.parse(require("fs").readFileSync("/global.json","utf8")); process.exit(c.platform === "github" ? 0 : 1)']);
+    report.imageConfigRead = configRead.code === 0;
+    const valid = container('renovate-config-validator', ['--strict', '/global.json']);
     const invalid = container('renovate-config-validator', ['--strict', '/work/invalid.json']);
     report.validConfiguration = valid.code === 0 && valid.stdout.includes('Config validated successfully');
     report.invalidConfigurationRejected = invalid.code !== 0 && `${invalid.stdout}${invalid.stderr}`.includes('badOption');
@@ -137,9 +149,9 @@ export function verifyLocal() {
     return report;
   } finally {
     for (const name of ownedNames) checked([...engineCommand, 'rm', '--force', name]);
-    if (ownershipChanged) checked(['sudo', 'chown', '-R', '--no-dereference', `${process.getuid()}:${process.getgid()}`, '--', privateData]);
-    if (engine === 'podman' && existsSync(privateData)) {
-      checked([...engineCommand, 'unshare', 'chown', '-R', '--no-dereference', '0:0', '--', privateData]);
+    if (ownershipChanged) checked(['sudo', 'chown', '-R', '--no-dereference', `${process.getuid()}:${process.getgid()}`, '--', privateData, globalFile]);
+    if (engine === 'podman' && existsSync(directory)) {
+      checked([...engineCommand, 'unshare', 'chown', '-R', '--no-dereference', '0:0', '--', directory]);
     }
     rmSync(directory, { recursive: true });
   }

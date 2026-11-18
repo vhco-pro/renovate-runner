@@ -32,8 +32,9 @@ Use the exact Bun runtime in package.json. Run `bun run test`, `bun run check:wo
 Native changes also run `bun scripts/verify-local.mjs --pull-only`, then `bun run test:native`.
 On Fedora, set `CONTAINER_ENGINE=podman` for both native commands.
 The offline native check uses only invented fixtures and owned temporary resources.
-Read docs/operations.md for setup, evidence boundaries and the connected-test approval requirement.
-Do not substitute unit/static success for real App, update, queue, notification or released-caller proof.
+Read docs/operations.md for setup and evidence boundaries. Source completion uses focused local/native checks and independent implementation review.
+Lab owns one separately approved live App/dependency-PR/private-output smoke after the verified first release; source checks do not claim that live proof.
+No synthetic caller, extra App/key-retirement cycle, or upstream queue/rate/manager certification is required.
 
 Ordinary CI runs only in this public repository on standard Linux runners.
 Private Lab policy and diagnostics stay in Lab's local verification context.

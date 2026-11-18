@@ -8,9 +8,8 @@ status: draft
 # Operate the Renovate runner
 
 The component is being implemented. The central schedule and publication switch remain disabled.
-Local proof does not establish App restrictions, real dependency updates or GitHub queue behavior.
-Those checks run on separately approved fixtures before production adoption.
-The [connected fixture procedure](../examples/connected/README.md) names its setup and native case matrix.
+Local proof covers our configuration and wrapper, not live App access or real dependency updates.
+Lab owns a single integration smoke after reviewed source integration and the verified first release; concrete access and activation remain separately approved.
 
 ## Local verification
 
@@ -30,26 +29,26 @@ git diff --check
 ```
 
 Rootless Podman on Fedora uses `CONTAINER_ENGINE=podman` for both native commands.
-The verifier maps ownership only for its temporary fixture volume, restores it, and removes the owned directory and containers.
+The verifier maps ownership only inside its owned temporary directory, restores it, and removes that directory and its containers.
+Its host-owned mode-0700 parent permits the official action to stat the image-owned mode-0600 config. Only the image-owned mode-0700 working child is mounted as /tmp; the config is bound separately. The native regression rejects host stat through the old image-owned parent and verifies host stat/container read through the repaired layout.
 It never mounts real target repositories or receives App credentials.
 Image preparation downloads the exact digest from [the internal action](../.github/actions/renovate/action.yml); the test then runs without network access.
 Missing prerequisites fail the test.
 The inventory records Node, Bun, Go, PHP and Composer from that image.
 It supplies no Terraform or OpenTofu CLI. Renovate performs its Terraform lockfile work internally.
-Connected proof must still verify complete resulting manifests and lockfiles for each supported manager.
+The native suite validates invented formats and the real wrapper; it does not certify every upstream manager.
 
 ## Adoption and trust
 
 Use the complete [external caller example](../examples/external/renovate.yml) and its adjacent target policy.
-Replace `FULL_COMMIT_SHA` with an independently verified release commit, retaining its exact version comment.
-For pre-release fixture testing, use the reviewed immutable commit and label it unreleased.
+Replace `FULL_COMMIT_SHA` with an independently verified release commit and record its version in the comment. Replace the invented example-org/example-repository policy entry with your selected owned repository.
 The external caller owns its environment, App key, billing and concurrency boundary.
 The central callers use the same local reusable workflow and committed target policy.
 
 The selected App is a trusted workflow author. Its Contents and Workflows access can author jobs that request GitHub job tokens and OIDC.
 Scope the installation to the reviewed repositories and provision the key only after checking their signing, publication and external federation boundaries.
 See the [accepted permission and protection design](specs/shared-renovate-runner.md#authentication-and-execution).
-Public main-update restrictions and a main-only environment are verified on fixtures before real grants.
+Read back public main-update restrictions and a main-only environment before supplying the App key under the concrete setup grant.
 Private Free-plan Lab has no equivalent protected-ref boundary.
 
 Ordinary pull-request checks have no App credentials.
@@ -89,8 +88,8 @@ Keep steady-state activation separate from fixture verification.
 
 ## Stop and recover dependency runs
 
-Disable `schedule.yml` and `manual.yml` and drain active/queued runs for an operational pause.
-The trusted App can reverse that pause; disabling a workflow is not a credential boundary.
+For an operational pause, reset RENOVATE_ENABLED=false and read back false before disabling schedule.yml and manual.yml. Read back both disabled, then cancel/drain their active and queued runs.
+The trusted App can author jobs that re-enable entries; re-enabling the reviewed entries alone does not permit writes while the flag stays false. These are operating observations, not a permanent credential boundary.
 A credential stop also retires the active App key and removes installation access through the deployment procedure.
 Previously issued installation tokens must be revoked or expire before a predecessor updater resumes.
 Keep existing dependency PRs under normal review.
@@ -98,23 +97,22 @@ Recover source behavior through a reviewed revert; external callers can restore 
 
 ## Release identity
 
-Lab records the actual review, integration, candidate, run and external-caller identities.
+Lab records the actual review, integration, candidate and release-run identities.
 In a full-history checkout, fetch the exact candidate and tags from the component remote before comparing them.
-`REVIEW_SHA`, `INTEGRATION_SHA`, `RELEASE_SHA`, `TAG`, `RUN_ID` and `CALLER_SHA` below are independently read values.
+`REVIEW_SHA`, `INTEGRATION_SHA`, `RELEASE_SHA`, `TAG` and `RUN_ID` below are independently read values.
 Use `v` followed by the shared GitVersion result for `TAG`.
-The tag, release run and released implementation used by the external caller must resolve to the same commit.
+The tag and successful release run must resolve to the same approved source. The smoke records its actual caller/defining-workflow SHAs separately.
 
 ```bash
 set -euo pipefail
 git fetch origin main --tags
 git merge-base --is-ancestor "$REVIEW_SHA" "$INTEGRATION_SHA"
 git merge-base --is-ancestor "$INTEGRATION_SHA" "$RELEASE_SHA"
-git diff --exit-code "$REVIEW_SHA" "$RELEASE_SHA" -- .github/workflows/ .github/actions/renovate/ config/ scripts/ tests/ examples/ renovate.json docs/operations.md
+git diff --exit-code "$REVIEW_SHA" "$RELEASE_SHA" -- .github/workflows/ .github/actions/renovate/ config/ package.json scripts/ tests/ examples/ renovate.json docs/operations.md
 TAG_SHA=$(git rev-parse "refs/tags/${TAG}^{}")
 RUN_SHA=$(gh api "repos/$REPOSITORY/actions/runs/$RUN_ID" --jq '.head_sha')
 test "$TAG_SHA" = "$RELEASE_SHA"
 test "$RUN_SHA" = "$RELEASE_SHA"
-test "$CALLER_SHA" = "$RELEASE_SHA"
 gh release view "$TAG" --repo "$REPOSITORY" --json tagName,isDraft,isPrerelease,url
 ```
 
@@ -148,7 +146,7 @@ Do not select an unrelated latest run or dispatch again because a response was l
 Use `gh run watch "$RUN_ID" --exit-status --repo "$REPOSITORY"` for that run.
 Initial publication readback means its successful source equals the approved candidate, the tag peels to it, and the corresponding public release exists.
 Perform the release-identity comparisons above before ending the main hold.
-Later external-caller and fixture-key checks remain delivery prerequisites, but no longer block ordinary current-head release recovery.
+The subsequent Lab smoke precedes real-target adoption; it does not block ordinary current-head release recovery.
 
 ## Failed initial publication
 
@@ -181,18 +179,29 @@ Manual recovery dispatches `release.yml` on current reviewed main with `dry-run=
 A fresh dispatch uses current source; rerunning an old attempt repeats its old checkout.
 An unset or false release switch forces dry-run. A dry-run computes the shared version without publishing.
 
-## Delivery and credential retirement
+## Single integration smoke
 
-Lab owns the post-merge delivery record and deployment-specific VitePress guide. Keep Homelab guides draft until separately approved for publication.
+Lab owns the concrete setup grant and the private VitePress operating record. Keep Homelab guides draft.
+Use the verified first component release and the actual central public runner. Compare its run head and defining-workflow SHA with that release; hold runtime drift until its reviewed release is verified. Retain any permitted reviewed deployment-policy or documentation diff.
 
-1. Read back the first public release, tag and successful source run using the identity checks above.
-2. Run the external caller at that exact released SHA, rendering the placeholder example in the owned caller fixture. Retain its revision and actual run.
-3. Retire fixture credentials before any real-repository grant. If GitHub requires another registered key before deleting the only active key, generate a replacement, discard its protected temporary PEM, record its public fingerprint and verify removal. Revoke the active key; while its protected secret still exists, prove its JWT is rejected. Then delete that secret, remove fixture installation access and read back the removals.
-4. Grant production access only after that whole sequence passes. Lab generates its production key and removes the unusable replacement public-key record. A later connected test needs a fresh fixture-only App and concrete grant; it never uses the production App.
+1. Install the actual App for only the disposable private target. Before seeding it, read back target Actions disabled. This prevents private CI spend.
+2. Seed one npm manifest/lockfile pair, an invented private canary and committed renovate.json enabling npm, with automerge and the dependency dashboard disabled. Require a dependency PR rather than onboarding.
+3. Set RENOVATE_ENABLED=false, disable schedule.yml and manual.yml, and read back all three states. Enable only manual.yml for the approved full dry-run.
+4. Before the separately authorized write, read back schedule.yml disabled, then set RENOVATE_ENABLED=true and dispatch manual.yml in write mode. Check scoped App access, native caller/defining-workflow identity, standard public Linux runner labels, one valid dependency PR and actual public logs, summaries, artifacts and caches for private canaries.
+5. On success or failure, reset RENOVATE_ENABLED=false, disable both entries, read back the states and cancel/drain their active and queued runs. Remove fixture App access, uninstalling an empty fixture-only installation if necessary. Retain the test repository/PR with Actions disabled; deletion needs separate approval. Remove temporary local key duplicates after installing normal central secret custody.
+6. A failed check holds real-target adoption. Review the repair, verify its resulting automatic release if source changed, then repeat the entire smoke setup under its grant. Preserve the earlier tag and failed run. Setup-only repairs do not require a new component release.
 
-Keep issue #1 open until those delivery checks pass, then link the verified release and Lab tracker before closing it.
-A failed check leaves Lab inactive and identifies the unmet step in that issue.
-The component source feature can finish at its independently reviewed integration; delivery and production adoption remain separately reported.
+Retain the valid one-target placeholder in inactive source policy until the owner-reviewed real-target list replaces it atomically. Keep both entries disabled during this interval. Do not add empty-policy handling or a second fixture App/key-retirement suite.
+Forced failure and private-output tests run locally through the real wrapper/native process, not through another live injection mechanism.
+
+## Real-target activation
+
+Grant production access only under the concrete Lab approval after that smoke passes. Lab owns real-repository credential-boundary checks, target policy publication and updater handover.
+Keep RENOVATE_ENABLED=false and schedule.yml disabled through preparation. Enable only manual.yml for its approved full dry-run. Disable Actions on private Lab before bot processing and keep its checks local; the separately approved weekly backup monitor is unchanged.
+After approved handover, the owner enables schedule.yml and manual.yml, then sets RENOVATE_ENABLED=true last. Read back both active workflows and the true flag.
+On a failed pilot, reset the flag, disable/read back both entries and drain their runs before restoring the recorded predecessor updater on every handed-over target. Retain the failed attempt and repeat adoption only after repair.
+
+Keep issue #1 open until first delivery and smoke checks pass, then link the verified release and Lab tracker before closing it. Component source completion and real adoption remain distinct.
 
 ## References
 
