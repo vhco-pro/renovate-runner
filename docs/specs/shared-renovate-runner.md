@@ -1,6 +1,6 @@
 ---
-status: in-progress
-status_description: "Implementing the accepted runner on its claimed feature branch; connected grants, merge, release and production activation remain separate."
+status: draft
+status_description: "Revising verification scope after the owner requested one integration smoke test and zero private Actions minutes; existing implementation is preserved."
 issue: https://github.com/vhco-pro/renovate-runner/issues/1
 branch: feat/shared-renovate-runner
 goal: "A reusable owner-operated GitHub Actions runner produces reviewable dependency updates with verified access, privacy and recovery controls."
