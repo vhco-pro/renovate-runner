@@ -1,0 +1,28 @@
+I found one nit and nothing blocking. The repair is limited to the declared paths and does what the Definition asks.
+
+MODEL: claude-opus-5-5
+TARGET: /tmp/vhco-opus-spec-DXs0jQ/clone @ 2ee85207a93144ce8c15b5a69f860ebd2e9ecfb7 (task base 7d2b7ef8d2a2edd67763f5ba7d0c9fedf828cd1e; record docs/internal/maintenance/forward-environment-secret.md; engineering docs 0c983f6793bfe35eb96ae95ad0c361c6200af44f)
+
+```text
+FINDING: F-01
+KIND: factual
+SEVERITY: nit
+WHERE: Commit 2ee8520 message
+EVIDENCE: `git log -1 --format=%B 2ee8520` prints only "fix: forward the environment App key to reusable calls" and has no body. conventions/delivery.md:53 says "A commit body explains why the change was made, which the diff cannot show." The reason (environment secrets resolve empty unless the caller passes them by name) appears only in the maintenance record and docs/operations.md:47-49.
+PROPOSAL: Do not rewrite the commit. Put the one-line reason in the PR or squash-merge message, so the history that triggers the GitVersion patch release carries it.
+```
+
+**What I checked (no other findings):**
+- **Diff scope:** `git diff 7d2b7ef..2ee8520` touches only the six affected paths plus the record. There are no container or runtime changes.
+- **Required secret:** `.github/workflows/renovate.yml:4-7` declares `RENOVATE_APP_PRIVATE_KEY` with `required: true`. The helper still receives it at `renovate.yml:65`.
+- **Callers:** `manual.yml:22-23`, `schedule.yml:11-12` and `examples/external/renovate.yml:11-12` each pass only that one named secret. Grep finds no `secrets: inherit` anywhere in the repo, so no other secrets are passed through.
+- **Environment boundary:** `environment: ${{ inputs.environment }}` is unchanged, and both central callers still pass `environment: renovate`. `tests/workflows.test.mjs:32` and `:82` still assert both. Permissions stay at `contents: read`.
+- **Regression tests:** `tests/workflows.test.mjs:34-36` and `:62-70` use `toEqual` on an exact mapping. On the base commit the `secrets` keys are undefined, so these assertions fail there. A future switch to `inherit` would also fail them. The record says it observed two failing tests; I did not re-run them at the base.
+- **Prose:** the `docs/operations.md` addition has no dashes and no AI credit. I read all six required pinned pages: AGENTS.md, coding, testing, delivery, documentation and humanize-prose.
+
+**Checks and their limits:**
+- **Fast suite:** I ran `bun /tmp/vhco-review-support/check.mjs <clone> <scratch> fast` after reading the helper. On Bun 1.4.4: 80 pass, 0 fail, 280 assertions, across 6 files.
+- **Workflow lint:** `... workflow` printed only its banner, with no diagnostics, and exited 0. I didn't check which actionlint route it took (installed binary or pinned container).
+- **Whitespace:** `git diff --check 7d2b7ef 2ee8520` produced no output.
+- **Author evidence I could not read:** the permission policy denied `cat /tmp/vhco-reusable-secrets-doc.md` and denied reading `/tmp/vhco-renovate-smoke-dry.log`. So I have not confirmed the GitHub docs wording or the empty `private-key` baseline error myself. The claim that a caller mapping picks up an environment-only value comes from the record, not from me. If the mapping resolves empty, the job fails with no key rather than gaining access. The live smoke is the real proof of this.
+- **Not run:** the regression test against the base commit (the clone is read-only, and the helper only accepts that clone path), the native container suite (not required), and any live, CI or release jobs. Following the record, CI, the GitVersion release and the fixture smoke are still to be verified. This review doesn't authorize any provider actions.

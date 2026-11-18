@@ -1,0 +1,28 @@
+{
+  "requested": "claude-opus-5-5",
+  "apiProvider": "firstParty",
+  "claudeVersion": "2.1.326 (Claude Code)",
+  "models": [
+    "claude-opus-5-5"
+  ],
+  "usage": {
+    "claude-opus-5-5": {
+      "inputTokens": 14,
+      "outputTokens": 4451,
+      "cacheReadInputTokens": 110333,
+      "cacheCreationInputTokens": 21160,
+      "webSearchRequests": 0,
+      "costUSD": 0.2804226,
+      "contextWindow": 1000000,
+      "maxOutputTokens": 128000,
+      "thinkingTokens": 1095,
+      "cacheCreationEphemeral5mInputTokens": 0,
+      "cacheCreationEphemeral1hInputTokens": 21160,
+      "canonicalModel": "claude-opus-5-5",
+      "provider": "firstParty",
+      "costBasis": "list"
+    }
+  },
+  "isError": false,
+  "exitCode": 0
+}
