@@ -1,6 +1,6 @@
 ---
-status: planned
-status_description: "Owner-accepted reduced integration scope; ready to resume implementation without private CI or live grants."
+status: in-progress
+status_description: "Implementing the accepted integration cleanup and measured config-access repair; live setup remains pending."
 issue: https://github.com/vhco-pro/renovate-runner/issues/1
 branch: feat/shared-renovate-runner
 goal: "A reusable owner-operated GitHub Actions runner produces reviewable dependency updates with verified access, privacy and recovery controls."
