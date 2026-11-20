@@ -3,6 +3,8 @@
   "repositories": [
     "vhco-pro/renovate-runner",
     "vhco-pro/lab",
-    "vhco-pro/opnsense-encrypted-git-backup"
+    "vhco-pro/opnsense-encrypted-git-backup",
+    "vhco-pro/setup-pwsh-action",
+    "vhco-pro/pwsh-ci-action"
   ]
 }
