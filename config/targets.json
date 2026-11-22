@@ -5,6 +5,7 @@
     "vhco-pro/lab",
     "vhco-pro/opnsense-encrypted-git-backup",
     "vhco-pro/setup-pwsh-action",
-    "vhco-pro/pwsh-ci-action"
+    "vhco-pro/pwsh-ci-action",
+    "vhco-pro/3d-assets-gen"
   ]
 }
