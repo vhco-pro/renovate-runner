@@ -83,7 +83,7 @@ runs:
       with:
         token: ${{ steps.token.outputs.token }}
         configurationFile: ${{ steps.prepare.outputs.config-file }}
-        renovate-image: ghcr.io/renovatebot/renovate:44.251.0-full@sha256:ccc4dc0852667fdbd6b32273d58a247e8b97f7c3a629b1ccd4e4b8712c0b8e2c
+        renovate-image: ghcr.io/renovatebot/renovate:45.3.2-full@sha256:6fde98271ba942ed3fae592267f3affd7fcab4b132fdc84511b4cdf3027011cf
         mount-docker-socket: 'false'
         docker-user: ${{ steps.prepare.outputs.docker-user }}
         docker-volumes: ${{ steps.prepare.outputs.work-dir }}:/tmp
